@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DeactivateUserController;
 use App\Http\Controllers\Admin\ReactivateUserController;
 use App\Http\Controllers\Admin\ResendInvitationController;
 use App\Http\Controllers\Admin\UserController;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -32,4 +34,20 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->can('resendInvitation', 'user')
         ->middleware('throttle:6,1')
         ->name('users.invitation.resend');
+
+    Route::get('categories', [CategoryController::class, 'index'])
+        ->can('manage', Category::class)
+        ->name('categories.index');
+
+    Route::post('categories', [CategoryController::class, 'store'])
+        ->can('manage', Category::class)
+        ->name('categories.store');
+
+    Route::put('categories/{category}', [CategoryController::class, 'update'])
+        ->can('manage', Category::class)
+        ->name('categories.update');
+
+    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
+        ->can('manage', Category::class)
+        ->name('categories.destroy');
 });

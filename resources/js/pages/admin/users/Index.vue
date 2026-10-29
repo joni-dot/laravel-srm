@@ -3,9 +3,11 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { MoreHorizontal, Search } from '@lucide/vue';
 import { ref, watch } from 'vue';
+import DeactivateUserController from '@/actions/App/Http/Controllers/Admin/DeactivateUserController';
 import ReactivateUserController from '@/actions/App/Http/Controllers/Admin/ReactivateUserController';
 import ResendInvitationController from '@/actions/App/Http/Controllers/Admin/ResendInvitationController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import DeactivateUserDialog from '@/components/users/DeactivateUserDialog.vue';
 import EditUserDialog from '@/components/users/EditUserDialog.vue';
 import InviteUserDialog from '@/components/users/InviteUserDialog.vue';
 import UserStatusBadge from '@/components/users/UserStatusBadge.vue';
@@ -94,6 +95,7 @@ function resendInvitation(user: ManagedUser): void {
             <Heading
                 title="Users"
                 description="Invite people and decide what they can do"
+                class="mb-0"
             />
             <InviteUserDialog :roles="roles" />
         </div>
@@ -205,9 +207,12 @@ function resendInvitation(user: ManagedUser): void {
         @update:open="userBeingEdited = null"
     />
 
-    <DeactivateUserDialog
+    <ConfirmActionDialog
         v-if="userBeingDeactivated"
-        :user="userBeingDeactivated"
+        :action="DeactivateUserController.form(userBeingDeactivated.id)"
+        :title="`Deactivate ${userBeingDeactivated.name}?`"
+        description="They will be signed out right away and can't log in until an admin reactivates them. Nothing they created is deleted."
+        confirm-label="Deactivate"
         :open="true"
         @update:open="userBeingDeactivated = null"
     />

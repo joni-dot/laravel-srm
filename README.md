@@ -31,17 +31,25 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/app -w /app composer:latest co
 
 Open http://localhost. Admins invite other people from the **Users** page.
 
+Want something to click around in? Fill your local database with about 2,000 made-up suppliers (this refuses to run in production):
+
+```bash
+./vendor/bin/sail artisan db:seed --class=DemoSupplierSeeder
+```
+
 Emails (invitations, password resets) are sent in the background by the `queue` container and show up in Mailpit at http://localhost:8025. After changing PHP code that runs in the background, restart the worker with `./vendor/bin/sail restart queue`.
 
 ## Roles
 
-| Role   | Can do                                   |
-| ------ | ---------------------------------------- |
-| Admin  | Everything, plus invite and manage users |
-| Buyer  | Add and edit suppliers                   |
-| Viewer | Look only                                |
+| Role   | Can do                                              |
+| ------ | --------------------------------------------------- |
+| Admin  | Everything, plus manage users and the category list |
+| Buyer  | Add, edit and archive suppliers and their contacts  |
+| Viewer | Look only                                           |
 
 Admins can't change their own role or deactivate themselves, so there is always at least one admin. Users are deactivated, never deleted, so their history stays intact.
+
+Suppliers are archived, never deleted, and can be restored. Contacts are people, so they are truly deleted when removed.
 
 ## Everyday commands
 

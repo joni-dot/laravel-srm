@@ -24,6 +24,7 @@ class SharedPropsTest extends TestCase
                     'role' => 'viewer',
                 ])
                 ->where('auth.can.manageUsers', false)
+                ->where('auth.can.manageCategories', false)
             );
     }
 
@@ -31,7 +32,10 @@ class SharedPropsTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create())
             ->get(route('dashboard'))
-            ->assertInertia(fn ($page) => $page->where('auth.can.manageUsers', true));
+            ->assertInertia(fn ($page) => $page
+                ->where('auth.can.manageUsers', true)
+                ->where('auth.can.manageCategories', true)
+            );
     }
 
     public function test_guests_have_no_user()

@@ -12,6 +12,7 @@ export type Auth = {
     user: User;
     can: {
         manageUsers: boolean;
+        manageCategories: boolean;
     };
 };
 

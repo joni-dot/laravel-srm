@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import DeactivateUserController from '@/actions/App/Http/Controllers/Admin/DeactivateUserController';
+import type { RouteFormDefinition } from '@/wayfinder';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,10 +12,12 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import type { ManagedUser } from '@/types';
 
 defineProps<{
-    user: ManagedUser;
+    action: RouteFormDefinition<'post'>;
+    title: string;
+    description: string;
+    confirmLabel: string;
 }>();
 
 const isOpen = defineModel<boolean>('open', { required: true });
@@ -25,19 +27,15 @@ const isOpen = defineModel<boolean>('open', { required: true });
     <Dialog v-model:open="isOpen">
         <DialogContent>
             <Form
-                v-bind="DeactivateUserController.form(user.id)"
+                v-bind="action"
                 :options="{ preserveScroll: true }"
                 @success="isOpen = false"
                 class="space-y-6"
                 v-slot="{ processing }"
             >
                 <DialogHeader>
-                    <DialogTitle>Deactivate {{ user.name }}?</DialogTitle>
-                    <DialogDescription>
-                        They will be signed out right away and can't log in
-                        until an admin reactivates them. Nothing they created is
-                        deleted.
-                    </DialogDescription>
+                    <DialogTitle>{{ title }}</DialogTitle>
+                    <DialogDescription>{{ description }}</DialogDescription>
                 </DialogHeader>
 
                 <DialogFooter class="gap-2">
@@ -52,7 +50,7 @@ const isOpen = defineModel<boolean>('open', { required: true });
                         :disabled="processing"
                     >
                         <Spinner v-if="processing" />
-                        Deactivate
+                        {{ confirmLabel }}
                     </Button>
                 </DialogFooter>
             </Form>
