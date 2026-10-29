@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AddContentSecurityPolicy;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
@@ -17,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(AddSecurityHeaders::class);
+        $middleware->append([AddSecurityHeaders::class, AddContentSecurityPolicy::class]);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

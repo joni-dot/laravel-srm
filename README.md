@@ -78,6 +78,12 @@ Suppliers are archived, never deleted, and can be restored. Contacts are people,
 
 Tip: add `alias sail='./vendor/bin/sail'` to your shell config to type less.
 
+## Security rules for developers
+
+- **No inline JavaScript.** The Content Security Policy only lets the browser run scripts from this app's own files. `<script>` blocks, `onclick="..."` attributes and scripts from other websites are blocked. If a Blade view truly needs an inline script, give it `nonce="{{ Vite::cspNonce() }}"`.
+- **Never show user input as HTML.** Vue's `{{ }}` and Blade's `{{ }}` escape text automatically. Do not use `v-html` or `{!! !!}` with anything a user typed.
+- **Check permissions on the server.** Hiding a button is only for convenience; every route needs a `->can(...)` check.
+
 ## Ground rules
 
 - **Security first.** Every change is reviewed for security and performance before it is merged.
