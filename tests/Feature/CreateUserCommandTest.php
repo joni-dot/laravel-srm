@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -18,11 +19,13 @@ class CreateUserCommandTest extends TestCase
             ->expectsQuestion('Email', 'Anna@Example.com')
             ->expectsQuestion('Password', 'correct-horse-battery')
             ->expectsQuestion('Confirm password', 'correct-horse-battery')
+            ->expectsQuestion('Role', 'admin')
             ->assertSuccessful();
 
         $user = User::sole();
 
         $this->assertSame('anna@example.com', $user->email);
+        $this->assertSame(Role::Admin, $user->role);
         $this->assertTrue(Hash::check('correct-horse-battery', $user->password));
     }
 
@@ -35,6 +38,7 @@ class CreateUserCommandTest extends TestCase
             ->expectsQuestion('Email', 'anna@example.com')
             ->expectsQuestion('Password', 'correct-horse-battery')
             ->expectsQuestion('Confirm password', 'correct-horse-battery')
+            ->expectsQuestion('Role', 'viewer')
             ->assertFailed();
 
         $this->assertSame(1, User::count());
@@ -47,6 +51,7 @@ class CreateUserCommandTest extends TestCase
             ->expectsQuestion('Email', 'anna@example.com')
             ->expectsQuestion('Password', 'correct-horse-battery')
             ->expectsQuestion('Confirm password', 'something-else')
+            ->expectsQuestion('Role', 'viewer')
             ->assertFailed();
 
         $this->assertSame(0, User::count());

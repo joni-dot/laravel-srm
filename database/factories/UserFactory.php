@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +29,7 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            'role' => Role::Viewer,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
@@ -44,6 +46,29 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => Role::Admin]);
+    }
+
+    public function buyer(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => Role::Buyer]);
+    }
+
+    /**
+     * Indicate that the user was invited but has not set a password yet.
+     */
+    public function invited(): static
+    {
+        return $this->state(fn (array $attributes) => ['password' => null]);
+    }
+
+    public function deactivated(): static
+    {
+        return $this->state(fn (array $attributes) => ['deactivated_at' => now()]);
     }
 
     /**

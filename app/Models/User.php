@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
+use App\Enums\UserStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,12 +20,14 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property Role $role
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property CarbonImmutable|null $deactivated_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -32,6 +37,15 @@ class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * New users get the least powerful role until an admin decides otherwise.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'role' => Role::Viewer->value,
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -44,6 +58,27 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'role' => Role::class,
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === Role::Admin;
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
+    }
+
+    public function status(): UserStatus
+    {
+        return match (true) {
+            $this->isDeactivated() => UserStatus::Deactivated,
+            $this->password === null => UserStatus::Invited,
+            default => UserStatus::Active,
+        };
     }
 }

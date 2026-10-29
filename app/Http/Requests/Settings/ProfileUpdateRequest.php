@@ -19,4 +19,9 @@ class ProfileUpdateRequest extends FormRequest
     {
         return $this->profileRules($this->user()->id);
     }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['email' => mb_strtolower((string) $this->input('email'))]);
+    }
 }

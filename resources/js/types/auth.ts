@@ -1,12 +1,18 @@
+export type Role = 'admin' | 'buyer' | 'viewer';
+
 export type User = {
     id: number;
     name: string;
     email: string;
+    role: Role;
     avatar?: string;
 };
 
 export type Auth = {
     user: User;
+    can: {
+        manageUsers: boolean;
+    };
 };
 
 export type Passkey = {

@@ -21,8 +21,17 @@ class SharedPropsTest extends TestCase
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => 'viewer',
                 ])
+                ->where('auth.can.manageUsers', false)
             );
+    }
+
+    public function test_admins_are_told_they_can_manage_users()
+    {
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('dashboard'))
+            ->assertInertia(fn ($page) => $page->where('auth.can.manageUsers', true));
     }
 
     public function test_guests_have_no_user()
