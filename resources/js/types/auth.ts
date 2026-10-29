@@ -13,6 +13,8 @@ export type Auth = {
     can: {
         manageUsers: boolean;
         manageCategories: boolean;
+        manageCertificateTypes: boolean;
+        manageSettings: boolean;
     };
 };
 

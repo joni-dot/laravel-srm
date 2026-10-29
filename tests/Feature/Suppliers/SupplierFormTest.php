@@ -116,6 +116,19 @@ class SupplierFormTest extends TestCase
         $this->assertEqualsCanonicalizing([$keep->id, $add->id], $supplier->categories->pluck('id')->all());
     }
 
+    public function test_the_responsible_buyer_must_be_an_active_buyer_or_admin()
+    {
+        foreach ([User::factory()->create(), User::factory()->buyer()->deactivated()->create()] as $notAllowed) {
+            $this->post(route('suppliers.store'), [...$this->validInput(), 'responsible_user_id' => $notAllowed->id])
+                ->assertSessionHasErrors('responsible_user_id');
+        }
+
+        $buyer = User::factory()->buyer()->create();
+        $this->post(route('suppliers.store'), [...$this->validInput(), 'responsible_user_id' => $buyer->id])
+            ->assertSessionHasNoErrors();
+        $this->assertSame($buyer->id, Supplier::sole()->responsible_user_id);
+    }
+
     public function test_archiving_cannot_be_done_through_the_form()
     {
         $this->post(route('suppliers.store'), [...$this->validInput(), 'archived_at' => now()->toDateTimeString()]);

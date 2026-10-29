@@ -22,6 +22,7 @@ const props = defineProps<{
 }>();
 
 const status = ref(props.supplier?.status ?? 'prospect');
+const responsibleUserId = ref(props.supplier?.responsible_user_id ?? '');
 const countryCode = ref(props.supplier?.country_code ?? 'FI');
 const currencyCode = ref(props.supplier?.currency_code ?? '');
 const deliveryTerm = ref(props.supplier?.delivery_term ?? '');
@@ -70,6 +71,27 @@ function isInCategory(categoryId: number): boolean {
                         name="supplier_number"
                         :default-value="supplier?.supplier_number ?? ''"
                     />
+                </FormField>
+                <FormField
+                    id="responsible_user_id"
+                    label="Responsible buyer"
+                    hint="Gets the certificate reminders"
+                    :error="errors.responsible_user_id"
+                >
+                    <NativeSelect
+                        id="responsible_user_id"
+                        v-model="responsibleUserId"
+                        name="responsible_user_id"
+                    >
+                        <option value="">Nobody yet</option>
+                        <option
+                            v-for="user in options.responsibleUsers"
+                            :key="user.id"
+                            :value="user.id"
+                        >
+                            {{ user.name }}
+                        </option>
+                    </NativeSelect>
                 </FormField>
                 <FormField id="status" label="Status" :error="errors.status">
                     <NativeSelect id="status" v-model="status" name="status">

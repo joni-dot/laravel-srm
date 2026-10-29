@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Suppliers;
 
+use App\Models\Certificate;
 use App\Models\Contact;
 use App\Models\Supplier;
 use App\Models\User;
@@ -25,6 +26,9 @@ class SupplierAccessTest extends TestCase
             'add contact' => ['post', 'suppliers.contacts.store'],
             'update contact' => ['put', 'suppliers.contacts.update'],
             'delete contact' => ['delete', 'suppliers.contacts.destroy'],
+            'add certificate' => ['post', 'suppliers.certificates.store'],
+            'update certificate' => ['put', 'suppliers.certificates.update'],
+            'delete certificate' => ['delete', 'suppliers.certificates.destroy'],
         ];
     }
 
@@ -65,9 +69,10 @@ class SupplierAccessTest extends TestCase
     public function test_viewers_cannot_change_anything(string $method, string $route)
     {
         $contact = Contact::factory()->create();
+        $certificate = Certificate::factory()->create(['supplier_id' => $contact->supplier_id]);
 
         $this->actingAs(User::factory()->create())
-            ->call($method, route($route, ['supplier' => $contact->supplier_id, 'contact' => $contact->id]), ['name' => 'X'])
+            ->call($method, route($route, ['supplier' => $contact->supplier_id, 'contact' => $contact->id, 'certificate' => $certificate->id]), ['name' => 'X'])
             ->assertForbidden();
     }
 
@@ -76,9 +81,10 @@ class SupplierAccessTest extends TestCase
     {
         $supplier = Supplier::factory()->archived()->create();
         $contact = Contact::factory()->for($supplier)->create();
+        $certificate = Certificate::factory()->for($supplier)->create();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->call($method, route($route, ['supplier' => $supplier, 'contact' => $contact]), ['name' => 'X'])
+            ->call($method, route($route, ['supplier' => $supplier, 'contact' => $contact, 'certificate' => $certificate]), ['name' => 'X'])
             ->assertForbidden();
     }
 

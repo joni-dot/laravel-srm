@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, LayoutGrid, Tags, Users } from '@lucide/vue';
+import {
+    BadgeCheck,
+    Building2,
+    LayoutGrid,
+    Settings,
+    Tags,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import CertificateTypeController from '@/actions/App/Http/Controllers/Admin/CertificateTypeController';
+import SettingsController from '@/actions/App/Http/Controllers/Admin/SettingsController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
 import AppLogo from '@/components/AppLogo.vue';
@@ -22,7 +31,7 @@ import type { NavItem } from '@/types';
 
 const page = usePage();
 
-const mainNavItems = computed<NavItem[]>(() => [
+const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -33,19 +42,44 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: SupplierController.index(),
         icon: Building2,
     },
-    ...(page.props.auth.can.manageCategories
-        ? [
-              {
-                  title: 'Categories',
-                  href: CategoryController.index(),
-                  icon: Tags,
-              },
-          ]
-        : []),
-    ...(page.props.auth.can.manageUsers
-        ? [{ title: 'Users', href: UserController.index(), icon: Users }]
-        : []),
-]);
+];
+
+const adminNavItems = computed<NavItem[]>(() => {
+    const can = page.props.auth.can;
+
+    const items: { isVisible: boolean; item: NavItem }[] = [
+        {
+            isVisible: can.manageCategories,
+            item: {
+                title: 'Categories',
+                href: CategoryController.index(),
+                icon: Tags,
+            },
+        },
+        {
+            isVisible: can.manageCertificateTypes,
+            item: {
+                title: 'Certificate types',
+                href: CertificateTypeController.index(),
+                icon: BadgeCheck,
+            },
+        },
+        {
+            isVisible: can.manageUsers,
+            item: { title: 'Users', href: UserController.index(), icon: Users },
+        },
+        {
+            isVisible: can.manageSettings,
+            item: {
+                title: 'Settings',
+                href: SettingsController.edit(),
+                icon: Settings,
+            },
+        },
+    ];
+
+    return items.filter(({ isVisible }) => isVisible).map(({ item }) => item);
+});
 </script>
 
 <template>
@@ -63,7 +97,12 @@ const mainNavItems = computed<NavItem[]>(() => [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain label="Platform" :items="mainNavItems" />
+            <NavMain
+                v-if="adminNavItems.length > 0"
+                label="Administration"
+                :items="adminNavItems"
+            />
         </SidebarContent>
 
         <SidebarFooter>

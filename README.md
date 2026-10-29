@@ -35,21 +35,36 @@ Want something to click around in? Fill your local database with about 2,000 mad
 
 ```bash
 ./vendor/bin/sail artisan db:seed --class=DemoSupplierSeeder
+./vendor/bin/sail artisan db:seed --class=DemoCertificateSeeder
 ```
 
-Emails (invitations, password resets) are sent in the background by the `queue` container and show up in Mailpit at http://localhost:8025. After changing PHP code that runs in the background, restart the worker with `./vendor/bin/sail restart queue`.
+Emails (invitations, password resets, certificate reminders) are sent in the background by the `queue` container and show up in Mailpit at http://localhost:8025.
+
+The `scheduler` container runs timed jobs. Every morning at 06:00 (UTC) it emails certificate reminders: each person gets one email listing all their certificates that need renewing. To send due reminders right away while testing:
+
+```bash
+./vendor/bin/sail artisan app:send-certificate-reminders
+```
+
+After changing PHP code that runs in the background, restart the workers with `./vendor/bin/sail restart queue scheduler`.
 
 ## Roles
 
-| Role   | Can do                                              |
-| ------ | --------------------------------------------------- |
-| Admin  | Everything, plus manage users and the category list |
-| Buyer  | Add, edit and archive suppliers and their contacts  |
-| Viewer | Look only                                           |
+| Role   | Can do                                                             |
+| ------ | ------------------------------------------------------------------ |
+| Admin  | Everything, plus users, categories, certificate types and settings |
+| Buyer  | Add, edit and archive suppliers and their contacts                 |
+| Viewer | Look only                                                          |
 
 Admins can't change their own role or deactivate themselves, so there is always at least one admin. Users are deactivated, never deleted, so their history stays intact.
 
 Suppliers are archived, never deleted, and can be restored. Contacts are people, so they are truly deleted when removed.
+
+## Certificates
+
+- Each certificate has its own email reminders (for example 60 and 14 days before it expires). They go to the supplier's responsible buyer, or to the reminder email set by an admin under **Settings**.
+- Admins can mark a certificate type as **required**. Active suppliers without a valid certificate of that type are flagged in the supplier list.
+- Uploaded files (PDF, JPG, PNG, up to 10 MB) are stored privately and can only be downloaded by signed-in users.
 
 ## Everyday commands
 

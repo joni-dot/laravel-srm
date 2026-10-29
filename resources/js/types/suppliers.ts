@@ -1,5 +1,7 @@
 export type SupplierStatus = 'prospect' | 'active' | 'inactive' | 'blocked';
 
+export type CertificateStatus = 'valid' | 'expiring_soon' | 'expired';
+
 export type SelectOption = {
     value: string;
     label: string;
@@ -18,6 +20,20 @@ export type SupplierListItem = {
     country: string;
     city: string | null;
     categories: string[];
+    missing_certificates: string[];
+};
+
+export type Certificate = {
+    id: number;
+    certificate_type_id: number;
+    type: string;
+    reference: string | null;
+    issued_on: string | null;
+    expires_on: string | null;
+    status: CertificateStatus;
+    reminder_days: number[];
+    file_name: string | null;
+    file_size: number | null;
 };
 
 export type Contact = {
@@ -49,8 +65,11 @@ export type SupplierDetails = {
     delivery_place: string | null;
     notes: string | null;
     archived_at: string | null;
+    responsible_user: string | null;
     categories: string[];
     contacts: Contact[];
+    certificates: Certificate[];
+    missing_certificates: string[];
 };
 
 export type SupplierFormData = {
@@ -58,6 +77,7 @@ export type SupplierFormData = {
     name: string;
     supplier_number: string | null;
     status: SupplierStatus;
+    responsible_user_id: number | null;
     country_code: string;
     business_id: string | null;
     vat_number: string | null;
@@ -77,8 +97,14 @@ export type SupplierFormData = {
 
 export type SupplierFormOptions = {
     statuses: SelectOption[];
+    responsibleUsers: { id: number; name: string }[];
     countries: SelectOption[];
     currencies: SelectOption[];
     deliveryTerms: SelectOption[];
     categories: Category[];
+};
+
+export type CertificateType = {
+    id: number;
+    name: string;
 };

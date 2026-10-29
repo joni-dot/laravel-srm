@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\Category;
+use App\Models\CertificateType;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -45,6 +47,8 @@ class HandleInertiaRequests extends Middleware
                 'can' => [
                     'manageUsers' => (bool) $request->user()?->can('viewAny', User::class),
                     'manageCategories' => (bool) $request->user()?->can('manage', Category::class),
+                    'manageCertificateTypes' => (bool) $request->user()?->can('manage', CertificateType::class),
+                    'manageSettings' => (bool) $request->user()?->can('manage', Setting::class),
                 ],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

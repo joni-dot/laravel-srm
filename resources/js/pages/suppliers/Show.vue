@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps } from '@inertiajs/vue3';
-import { Archive, ArchiveRestore, Pencil } from '@lucide/vue';
+import { Archive, ArchiveRestore, Pencil, TriangleAlert } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ArchiveSupplierController from '@/actions/App/Http/Controllers/Suppliers/ArchiveSupplierController';
 import RestoreSupplierController from '@/actions/App/Http/Controllers/Suppliers/RestoreSupplierController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
+import CertificateList from '@/components/certificates/CertificateList.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
 import ContactList from '@/components/suppliers/ContactList.vue';
@@ -12,10 +13,11 @@ import DetailItem from '@/components/suppliers/DetailItem.vue';
 import SupplierStatusBadge from '@/components/suppliers/SupplierStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { SupplierDetails } from '@/types';
+import type { CertificateType, SupplierDetails } from '@/types';
 
 const props = defineProps<{
     supplier: SupplierDetails;
+    certificateTypes: CertificateType[];
     can: { update: boolean; archive: boolean; restore: boolean };
 }>();
 
@@ -76,6 +78,18 @@ function restore(): void {
             changes.
         </div>
 
+        <div
+            v-if="supplier.missing_certificates.length > 0"
+            role="alert"
+            class="flex gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100"
+        >
+            <TriangleAlert class="size-5 shrink-0" />
+            <p>
+                Missing a valid required certificate:
+                <strong>{{ supplier.missing_certificates.join(', ') }}</strong>
+            </p>
+        </div>
+
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="space-y-2">
                 <Heading
@@ -121,6 +135,10 @@ function restore(): void {
         <dl
             class="grid gap-6 rounded-xl border p-6 sm:grid-cols-2 lg:grid-cols-3"
         >
+            <DetailItem
+                label="Responsible buyer"
+                :value="supplier.responsible_user"
+            />
             <DetailItem label="Business ID" :value="supplier.business_id" />
             <DetailItem label="VAT number" :value="supplier.vat_number" />
             <DetailItem label="Address" :value="address" />
@@ -167,6 +185,13 @@ function restore(): void {
                 <p class="whitespace-pre-line">{{ supplier.notes }}</p>
             </DetailItem>
         </dl>
+
+        <CertificateList
+            :supplier-id="supplier.id"
+            :certificates="supplier.certificates"
+            :certificate-types="certificateTypes"
+            :can-edit="can.update"
+        />
 
         <ContactList
             :supplier-id="supplier.id"

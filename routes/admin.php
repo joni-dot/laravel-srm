@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CertificateTypeController;
 use App\Http\Controllers\Admin\DeactivateUserController;
 use App\Http\Controllers\Admin\ReactivateUserController;
 use App\Http\Controllers\Admin\ResendInvitationController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Models\Category;
+use App\Models\CertificateType;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -50,4 +54,28 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
         ->can('manage', Category::class)
         ->name('categories.destroy');
+
+    Route::get('certificate-types', [CertificateTypeController::class, 'index'])
+        ->can('manage', CertificateType::class)
+        ->name('certificate-types.index');
+
+    Route::post('certificate-types', [CertificateTypeController::class, 'store'])
+        ->can('manage', CertificateType::class)
+        ->name('certificate-types.store');
+
+    Route::put('certificate-types/{certificateType}', [CertificateTypeController::class, 'update'])
+        ->can('manage', CertificateType::class)
+        ->name('certificate-types.update');
+
+    Route::delete('certificate-types/{certificateType}', [CertificateTypeController::class, 'destroy'])
+        ->can('manage', CertificateType::class)
+        ->name('certificate-types.destroy');
+
+    Route::get('settings', [SettingsController::class, 'edit'])
+        ->can('manage', Setting::class)
+        ->name('settings.edit');
+
+    Route::put('settings', [SettingsController::class, 'update'])
+        ->can('manage', Setting::class)
+        ->name('settings.update');
 });

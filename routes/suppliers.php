@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Suppliers\ArchiveSupplierController;
+use App\Http\Controllers\Suppliers\CertificateController;
 use App\Http\Controllers\Suppliers\ContactController;
 use App\Http\Controllers\Suppliers\RestoreSupplierController;
 use App\Http\Controllers\Suppliers\SupplierController;
@@ -53,5 +54,21 @@ Route::middleware('auth')->group(function () {
         Route::delete('suppliers/{supplier}/contacts/{contact}', [ContactController::class, 'destroy'])
             ->can('update', 'supplier')
             ->name('suppliers.contacts.destroy');
+
+        Route::post('suppliers/{supplier}/certificates', [CertificateController::class, 'store'])
+            ->can('update', 'supplier')
+            ->name('suppliers.certificates.store');
+
+        Route::put('suppliers/{supplier}/certificates/{certificate}', [CertificateController::class, 'update'])
+            ->can('update', 'supplier')
+            ->name('suppliers.certificates.update');
+
+        Route::delete('suppliers/{supplier}/certificates/{certificate}', [CertificateController::class, 'destroy'])
+            ->can('update', 'supplier')
+            ->name('suppliers.certificates.destroy');
+
+        Route::get('suppliers/{supplier}/certificates/{certificate}/file', [CertificateController::class, 'download'])
+            ->can('view', 'supplier')
+            ->name('suppliers.certificates.download');
     });
 });

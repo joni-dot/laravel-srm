@@ -4,8 +4,10 @@ namespace App\Http\Requests\Suppliers;
 
 use App\Enums\Currency;
 use App\Enums\DeliveryTerm;
+use App\Enums\Role;
 use App\Enums\SupplierStatus;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Rules\FinnishBusinessId;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +32,12 @@ class SupplierRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'supplier_number' => ['nullable', 'string', 'max:50', Rule::unique(Supplier::class)->ignore($supplierId)],
             'status' => ['required', Rule::enum(SupplierStatus::class)],
+            'responsible_user_id' => [
+                'nullable', 'integer',
+                Rule::exists(User::class, 'id')
+                    ->whereIn('role', [Role::Admin->value, Role::Buyer->value])
+                    ->whereNull('deactivated_at'),
+            ],
             'country_code' => ['required', 'string', Rule::in(Countries::getCountryCodes())],
             'business_id' => [
                 'nullable', 'string', 'max:50',
@@ -75,6 +83,7 @@ class SupplierRequest extends FormRequest
             'vat_number' => 'VAT number',
             'country_code' => 'country',
             'currency_code' => 'currency',
+            'responsible_user_id' => 'responsible buyer',
         ];
     }
 

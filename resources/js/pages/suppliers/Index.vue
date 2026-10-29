@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { Plus, Search } from '@lucide/vue';
+import { Plus, Search, TriangleAlert } from '@lucide/vue';
 import { reactive, watch } from 'vue';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
 import Heading from '@/components/Heading.vue';
@@ -33,6 +33,7 @@ const props = defineProps<{
         status: SupplierStatus | null;
         category: number | null;
         archived: boolean;
+        missing_certificates: boolean;
     };
     statuses: SelectOption[];
     categories: Category[];
@@ -44,6 +45,7 @@ const filters = reactive({
     status: props.filters.status ?? '',
     category: props.filters.category ?? '',
     archived: props.filters.archived,
+    missingCertificates: props.filters.missing_certificates,
 });
 
 function applyFilters(): void {
@@ -54,6 +56,7 @@ function applyFilters(): void {
             status: filters.status || undefined,
             category: filters.category || undefined,
             archived: filters.archived ? 1 : undefined,
+            missing_certificates: filters.missingCertificates ? 1 : undefined,
         },
         {
             only: ['suppliers', 'filters'],
@@ -65,7 +68,15 @@ function applyFilters(): void {
 }
 
 watch(() => filters.search, useDebounceFn(applyFilters, 300));
-watch(() => [filters.status, filters.category, filters.archived], applyFilters);
+watch(
+    () => [
+        filters.status,
+        filters.category,
+        filters.archived,
+        filters.missingCertificates,
+    ],
+    applyFilters,
+);
 </script>
 
 <template>
@@ -127,6 +138,10 @@ watch(() => [filters.status, filters.category, filters.archived], applyFilters);
                 </option>
             </NativeSelect>
             <Label class="flex items-center gap-2 font-normal">
+                <Checkbox v-model="filters.missingCertificates" />
+                Missing certificates
+            </Label>
+            <Label class="flex items-center gap-2 font-normal">
                 <Checkbox v-model="filters.archived" />
                 Show archived
             </Label>
@@ -164,6 +179,14 @@ watch(() => [filters.status, filters.category, filters.archived], applyFilters);
                             >
                                 {{ supplier.name }}
                             </Link>
+                            <p
+                                v-if="supplier.missing_certificates.length > 0"
+                                class="mt-1 flex items-center gap-1 text-xs font-normal text-red-600 dark:text-red-400"
+                            >
+                                <TriangleAlert class="size-3.5 shrink-0" />
+                                Missing:
+                                {{ supplier.missing_certificates.join(', ') }}
+                            </p>
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ supplier.supplier_number }}

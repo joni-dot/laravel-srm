@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string|null $supplier_number
  * @property SupplierStatus $status
+ * @property int|null $responsible_user_id
  * @property string $country_code
  * @property string|null $business_id
  * @property string|null $vat_number
@@ -37,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $archived_at
  */
 #[Fillable([
-    'name', 'supplier_number', 'status', 'country_code', 'business_id', 'vat_number',
+    'name', 'supplier_number', 'status', 'responsible_user_id', 'country_code', 'business_id', 'vat_number',
     'street_address', 'postal_code', 'city', 'website', 'email', 'phone',
     'payment_terms', 'currency_code', 'delivery_term', 'delivery_place', 'notes',
 ])]
@@ -82,9 +84,43 @@ class Supplier extends Model
         return $this->hasMany(Contact::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function responsibleUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
+    /**
+     * @return HasMany<Certificate, $this>
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
+    }
+
+    /**
+     * Active suppliers that lack a currently valid certificate of at least one required type.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function missingRequiredCertificates(Builder $query): void
+    {
+        $query
+            ->where('status', SupplierStatus::Active)
+            ->whereExists(CertificateType::query()
+                ->where('is_required', true)
+                ->whereNotExists(Certificate::query()
+                    ->currentlyValid()
+                    ->whereColumn('certificates.supplier_id', 'suppliers.id')
+                    ->whereColumn('certificates.certificate_type_id', 'certificate_types.id')));
     }
 
     /**
