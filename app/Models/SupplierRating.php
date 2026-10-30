@@ -22,6 +22,8 @@ class SupplierRating extends Model
     /** @use HasFactory<SupplierRatingFactory> */
     use HasFactory;
 
+    public const int OVERDUE_AFTER_MONTHS = 12;
+
     /**
      * @return array<string, string>
      */

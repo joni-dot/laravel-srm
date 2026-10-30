@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\CertificateStatus;
 use App\Enums\Currency;
 use App\Enums\DeliveryTerm;
 use App\Enums\RiskLevel;
@@ -234,18 +233,23 @@ class Supplier extends Model
     #[Scope]
     protected function withExpiringCertificateNotReplaced(Builder $query): void
     {
-        $soon = today()->addDays(CertificateStatus::EXPIRING_SOON_DAYS);
-
         $query->whereExists(Certificate::query()
             ->whereColumn('certificates.supplier_id', 'suppliers.id')
-            ->where('certificates.expires_on', '<', $soon)
-            ->whereNotExists(Certificate::query()
-                ->from('certificates as replacement')
-                ->whereColumn('replacement.supplier_id', 'certificates.supplier_id')
-                ->whereColumn('replacement.certificate_type_id', 'certificates.certificate_type_id')
-                ->where(fn (Builder $query) => $query
-                    ->whereNull('replacement.expires_on')
-                    ->orWhere('replacement.expires_on', '>=', $soon))));
+            ->expiringWithoutReplacement());
+    }
+
+    /**
+     * Active suppliers never rated, or not rated recently enough.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function ratingOverdue(Builder $query): void
+    {
+        $query
+            ->where('status', SupplierStatus::Active)
+            ->whereDoesntHave('ratings', fn (Builder $ratings) => $ratings
+                ->where('rated_on', '>=', today()->subMonths(SupplierRating::OVERDUE_AFTER_MONTHS)));
     }
 
     /**

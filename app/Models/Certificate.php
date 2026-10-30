@@ -88,4 +88,25 @@ class Certificate extends Model
             ->whereNull('expires_on')
             ->orWhere('expires_on', '>=', today()));
     }
+
+    /**
+     * Expired or expiring soon, with nothing of the same type lasting longer.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function expiringWithoutReplacement(Builder $query): void
+    {
+        $soon = today()->addDays(CertificateStatus::EXPIRING_SOON_DAYS);
+
+        $query
+            ->where('certificates.expires_on', '<', $soon)
+            ->whereNotExists(self::query()
+                ->from('certificates as replacement')
+                ->whereColumn('replacement.supplier_id', 'certificates.supplier_id')
+                ->whereColumn('replacement.certificate_type_id', 'certificates.certificate_type_id')
+                ->where(fn (Builder $query) => $query
+                    ->whereNull('replacement.expires_on')
+                    ->orWhere('replacement.expires_on', '>=', $soon)));
+    }
 }

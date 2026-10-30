@@ -45,6 +45,8 @@ class SupplierController extends Controller
             'category' => $request->integer('category') ?: null,
             'archived' => $request->boolean('archived'),
             'missing_certificates' => $request->boolean('missing_certificates'),
+            'certificates_expiring' => $request->boolean('certificates_expiring'),
+            'rating_overdue' => $request->boolean('rating_overdue'),
             'contracts_action_soon' => $canViewContracts && $request->boolean('contracts_action_soon'),
         ];
 
@@ -61,6 +63,8 @@ class SupplierController extends Controller
             ->when($filters['risk'], fn ($query, $level) => $query->withRiskLevel($level))
             ->when($filters['category'], fn ($query, $categoryId) => $query->whereRelation('categories', 'categories.id', $categoryId))
             ->when($filters['missing_certificates'], fn ($query) => $query->missingRequiredCertificates())
+            ->when($filters['certificates_expiring'], fn ($query) => $query->withExpiringCertificateNotReplaced())
+            ->when($filters['rating_overdue'], fn ($query) => $query->ratingOverdue())
             ->when($filters['contracts_action_soon'], fn ($query) => $query->whereHas('contracts', fn ($contracts) => $contracts->needingActionSoon()))
             ->orderBy('name')
             ->paginate(self::SUPPLIERS_PER_PAGE)

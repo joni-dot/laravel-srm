@@ -37,6 +37,8 @@ const props = defineProps<{
         category: number | null;
         archived: boolean;
         missing_certificates: boolean;
+        certificates_expiring: boolean;
+        rating_overdue: boolean;
         contracts_action_soon: boolean;
     };
     statuses: SelectOption[];
@@ -52,6 +54,8 @@ const filters = reactive({
     category: props.filters.category ?? '',
     archived: props.filters.archived,
     missingCertificates: props.filters.missing_certificates,
+    certificatesExpiring: props.filters.certificates_expiring,
+    ratingOverdue: props.filters.rating_overdue,
     contractsActionSoon: props.filters.contracts_action_soon,
 });
 
@@ -65,6 +69,8 @@ function applyFilters(): void {
             category: filters.category || undefined,
             archived: filters.archived ? 1 : undefined,
             missing_certificates: filters.missingCertificates ? 1 : undefined,
+            certificates_expiring: filters.certificatesExpiring ? 1 : undefined,
+            rating_overdue: filters.ratingOverdue ? 1 : undefined,
             contracts_action_soon: filters.contractsActionSoon ? 1 : undefined,
         },
         {
@@ -84,6 +90,8 @@ watch(
         filters.category,
         filters.archived,
         filters.missingCertificates,
+        filters.certificatesExpiring,
+        filters.ratingOverdue,
         filters.contractsActionSoon,
     ],
     applyFilters,
@@ -165,6 +173,14 @@ watch(
             <Label class="flex items-center gap-2 font-normal">
                 <Checkbox v-model="filters.missingCertificates" />
                 Missing certificates
+            </Label>
+            <Label class="flex items-center gap-2 font-normal">
+                <Checkbox v-model="filters.certificatesExpiring" />
+                Certificates expiring
+            </Label>
+            <Label class="flex items-center gap-2 font-normal">
+                <Checkbox v-model="filters.ratingOverdue" />
+                Rating overdue
             </Label>
             <Label
                 v-if="can.viewContracts"
