@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * The one place that works out overall scores: the weighted average of a rating's own scores.
  * Old ratings may lack newer criteria, so only the weights of the scores they have count.
+ * When none of those has any weight, every score counts the same.
  */
 class RecalculateOverallScores
 {
@@ -40,7 +41,7 @@ class RecalculateOverallScores
             ->when($ratingId, fn ($query) => $query->where('rating_scores.supplier_rating_id', $ratingId))
             ->groupBy('rating_scores.supplier_rating_id')
             ->select('rating_scores.supplier_rating_id')
-            ->selectRaw('ROUND(SUM(rating_scores.score * rating_criteria.weight)::numeric / SUM(rating_criteria.weight), 2) AS score');
+            ->selectRaw('ROUND(COALESCE(SUM(rating_scores.score * rating_criteria.weight)::numeric / NULLIF(SUM(rating_criteria.weight), 0), AVG(rating_scores.score)), 2) AS score');
 
         DB::update("
             UPDATE supplier_ratings

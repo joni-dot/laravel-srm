@@ -35,21 +35,31 @@ const props = defineProps<{
     criteria: CriterionRow[];
 }>();
 
+const MAX_TOTAL_WEIGHT = 100;
+
 const isAdding = ref(false);
 const criterionBeingRenamed = ref<CriterionRow | null>(null);
 const criterionBeingRemoved = ref<CriterionRow | null>(null);
 
 const weights = ref<Record<number, number | string>>({});
 
-// Keeps unsaved weights when a criterion is added, renamed or removed.
+// Keeps unsaved weights, unless the server changed that weight itself.
 watch(
     () => props.criteria,
-    (criteria) => {
+    (criteria, previousCriteria) => {
         weights.value = Object.fromEntries(
-            criteria.map((criterion) => [
-                criterion.id,
-                weights.value[criterion.id] ?? criterion.weight,
-            ]),
+            criteria.map((criterion) => {
+                const previous = previousCriteria?.find(
+                    ({ id }) => id === criterion.id,
+                );
+
+                return [
+                    criterion.id,
+                    previous?.weight === criterion.weight
+                        ? weights.value[criterion.id]
+                        : criterion.weight,
+                ];
+            }),
         );
     },
     { immediate: true },
@@ -65,20 +75,20 @@ const totalWeightInUse = computed(() =>
         ),
 );
 
+const isOverMaximum = computed(() => totalWeightInUse.value > MAX_TOTAL_WEIGHT);
+
 function share(criterion: CriterionRow): string {
     if (criterion.retired_at) {
         return 'Old ratings only';
     }
 
-    if (totalWeightInUse.value === 0) {
-        return '—';
+    const weight = Number(weights.value[criterion.id]) || 0;
+
+    if (weight === 0) {
+        return 'Does not count';
     }
 
-    const percent =
-        ((Number(weights.value[criterion.id]) || 0) / totalWeightInUse.value) *
-        100;
-
-    return `${Math.round(percent)}% of the score`;
+    return `${Math.round((weight / totalWeightInUse.value) * 100)}% of the score`;
 }
 
 function usage(criterion: CriterionRow): string {
@@ -153,7 +163,7 @@ function restore(criterion: CriterionRow): void {
                                 :name="`weights[${criterion.id}]`"
                                 :aria-label="`Weight of ${criterion.name}`"
                                 type="number"
-                                min="1"
+                                min="0"
                                 max="100"
                                 step="1"
                                 required
@@ -203,13 +213,27 @@ function restore(criterion: CriterionRow): void {
                 </li>
             </ul>
 
+            <div>
+                <p
+                    class="text-sm font-medium"
+                    :class="{ 'text-destructive': isOverMaximum }"
+                >
+                    Total: {{ totalWeightInUse }}% of {{ MAX_TOTAL_WEIGHT }}%
+                </p>
+                <p v-if="isOverMaximum" class="text-sm text-destructive">
+                    Lower the weights by
+                    {{ totalWeightInUse - MAX_TOTAL_WEIGHT }}% to save.
+                </p>
+                <InputError v-else :message="errors.weights" />
+            </div>
+
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <p class="max-w-md text-sm text-muted-foreground">
                     A bigger weight makes a criterion count more. Saving
                     recalculates the overall score of every rating and every
                     risk level.
                 </p>
-                <Button type="submit" :disabled="processing">
+                <Button type="submit" :disabled="processing || isOverMaximum">
                     <Spinner v-if="processing" />
                     Save weights
                 </Button>

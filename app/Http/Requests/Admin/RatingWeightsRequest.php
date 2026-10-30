@@ -22,7 +22,7 @@ class RatingWeightsRequest extends FormRequest
         ];
 
         foreach ($criterionIds as $criterionId) {
-            $rules["weights.{$criterionId}"] = ['required', 'integer', 'between:1,100'];
+            $rules["weights.{$criterionId}"] = ['required', 'integer', 'between:0,100'];
         }
 
         return $rules;

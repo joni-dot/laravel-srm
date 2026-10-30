@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\RatingCriterionRequest;
 use App\Http\Requests\Admin\RatingWeightsRequest;
 use App\Models\RatingCriterion;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +29,7 @@ class RatingCriterionController extends Controller
     {
         RatingCriterion::create($request->validated());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Criterion added.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Criterion added. It does not count until you give it a weight.')]);
 
         return back();
     }
@@ -72,12 +73,20 @@ class RatingCriterionController extends Controller
         return back();
     }
 
+    /**
+     * Its old weight is lowered if needed, so bringing it back cannot push the total over the limit.
+     */
     public function restore(RatingCriterion $ratingCriterion): RedirectResponse
     {
-        $ratingCriterion->retired_at = null;
-        $ratingCriterion->save();
+        DB::transaction(function () use ($ratingCriterion) {
+            $totalInUse = (int) RatingCriterion::query()->inUse()->orderBy('id')->lockForUpdate()->pluck('weight')->sum();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Criterion is back in use.')]);
+            $ratingCriterion->retired_at = null;
+            $ratingCriterion->weight = max(0, min($ratingCriterion->weight, RatingCriterion::MAX_TOTAL_WEIGHT - $totalInUse));
+            $ratingCriterion->save();
+        });
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Criterion is back in use with a weight of :weight.', ['weight' => $ratingCriterion->weight])]);
 
         return back();
     }

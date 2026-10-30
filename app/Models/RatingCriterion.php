@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['name'])]
 class RatingCriterion extends Model
 {
+    public const int MAX_TOTAL_WEIGHT = 100;
+
     /** @use HasFactory<RatingCriterionFactory> */
     use HasFactory;
 
