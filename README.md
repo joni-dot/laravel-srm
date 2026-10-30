@@ -64,7 +64,7 @@ Suppliers are archived, never deleted, and can be restored. Contacts are people,
 
 ## Ratings, risk and spend
 
-- **Ratings:** buyers and admins score a supplier from 1 to 5 on each criterion. The overall score is the average, and the latest rating (by date) counts. Admins manage the criteria; a criterion old ratings use is retired, not deleted.
+- **Ratings:** buyers and admins score a supplier from 1 to 5 on each criterion. The overall score is the weighted average, and the latest rating (by date) counts. Admins manage the criteria and their weights; changing a weight recalculates all saved overall scores and risk levels. A criterion old ratings use is retired, not deleted.
 - **Risk level** is calculated live, and buyers and admins can override it with a reason:
     - **High:** the supplier is blocked, the latest rating is below 2.5, or a valid required certificate is missing.
     - **Medium:** the latest rating is below 3.5, or a certificate has expired or expires within 30 days with no replacement.

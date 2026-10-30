@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Ratings\UpdateRatingWeights;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RatingCriterionRequest;
+use App\Http\Requests\Admin\RatingWeightsRequest;
 use App\Models\RatingCriterion;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -15,7 +17,7 @@ class RatingCriterionController extends Controller
     {
         return Inertia::render('admin/rating-criteria/Index', [
             'criteria' => RatingCriterion::query()
-                ->select(['id', 'name', 'retired_at'])
+                ->select(['id', 'name', 'weight', 'retired_at'])
                 ->withCount('scores')
                 ->orderBy('name')
                 ->get(),
@@ -36,6 +38,15 @@ class RatingCriterionController extends Controller
         $ratingCriterion->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Criterion renamed.')]);
+
+        return back();
+    }
+
+    public function updateWeights(RatingWeightsRequest $request, UpdateRatingWeights $updateRatingWeights): RedirectResponse
+    {
+        $updateRatingWeights->handle($request->weightsByCriterionId());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Weights saved. Overall scores and risk levels are up to date.')]);
 
         return back();
     }

@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Form, Head, router } from '@inertiajs/vue3';
 import { ArchiveRestore, Pencil, Plus, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import RatingCriterionController from '@/actions/App/Http/Controllers/Admin/RatingCriterionController';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import RatingCriterionDialog from '@/components/ratings/RatingCriterionDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 type CriterionRow = {
     id: number;
     name: string;
+    weight: number;
     retired_at: string | null;
     scores_count: number;
 };
@@ -27,13 +31,55 @@ defineOptions({
     },
 });
 
-defineProps<{
+const props = defineProps<{
     criteria: CriterionRow[];
 }>();
 
 const isAdding = ref(false);
 const criterionBeingRenamed = ref<CriterionRow | null>(null);
 const criterionBeingRemoved = ref<CriterionRow | null>(null);
+
+const weights = ref<Record<number, number | string>>({});
+
+// Keeps unsaved weights when a criterion is added, renamed or removed.
+watch(
+    () => props.criteria,
+    (criteria) => {
+        weights.value = Object.fromEntries(
+            criteria.map((criterion) => [
+                criterion.id,
+                weights.value[criterion.id] ?? criterion.weight,
+            ]),
+        );
+    },
+    { immediate: true },
+);
+
+const totalWeightInUse = computed(() =>
+    props.criteria
+        .filter((criterion) => !criterion.retired_at)
+        .reduce(
+            (total, criterion) =>
+                total + (Number(weights.value[criterion.id]) || 0),
+            0,
+        ),
+);
+
+function share(criterion: CriterionRow): string {
+    if (criterion.retired_at) {
+        return 'Old ratings only';
+    }
+
+    if (totalWeightInUse.value === 0) {
+        return '—';
+    }
+
+    const percent =
+        ((Number(weights.value[criterion.id]) || 0) / totalWeightInUse.value) *
+        100;
+
+    return `${Math.round(percent)}% of the score`;
+}
 
 function usage(criterion: CriterionRow): string {
     return criterion.scores_count === 1
@@ -73,54 +119,102 @@ function restore(criterion: CriterionRow): void {
             No criteria yet.
         </p>
 
-        <ul v-else class="divide-y rounded-xl border">
-            <li
-                v-for="criterion in criteria"
-                :key="criterion.id"
-                class="flex items-center justify-between gap-4 px-4 py-3 text-sm"
-            >
-                <div>
-                    <p class="font-medium">
-                        {{ criterion.name }}
-                        <Badge
-                            v-if="criterion.retired_at"
-                            variant="outline"
-                            class="ml-1"
-                            >Retired</Badge
+        <Form
+            v-else
+            v-bind="RatingCriterionController.updateWeights.form()"
+            :options="{ preserveScroll: true }"
+            class="space-y-4"
+            v-slot="{ errors, processing }"
+        >
+            <ul class="divide-y rounded-xl border">
+                <li
+                    v-for="criterion in criteria"
+                    :key="criterion.id"
+                    class="flex flex-wrap items-center justify-between gap-4 px-4 py-3 text-sm"
+                >
+                    <div class="min-w-40 flex-1">
+                        <p class="font-medium">
+                            {{ criterion.name }}
+                            <Badge
+                                v-if="criterion.retired_at"
+                                variant="outline"
+                                class="ml-1"
+                                >Retired</Badge
+                            >
+                        </p>
+                        <p class="text-muted-foreground">
+                            {{ usage(criterion) }}
+                        </p>
+                    </div>
+                    <div class="w-52">
+                        <div class="flex items-center gap-2">
+                            <Input
+                                v-model="weights[criterion.id]"
+                                :name="`weights[${criterion.id}]`"
+                                :aria-label="`Weight of ${criterion.name}`"
+                                type="number"
+                                min="1"
+                                max="100"
+                                step="1"
+                                required
+                                class="w-20"
+                            />
+                            <span
+                                class="whitespace-nowrap text-muted-foreground"
+                            >
+                                {{ share(criterion) }}
+                            </span>
+                        </div>
+                        <InputError
+                            :message="errors[`weights.${criterion.id}`]"
+                        />
+                    </div>
+                    <div class="flex">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            :aria-label="`Rename ${criterion.name}`"
+                            @click="criterionBeingRenamed = criterion"
                         >
-                    </p>
-                    <p class="text-muted-foreground">{{ usage(criterion) }}</p>
-                </div>
-                <div class="flex">
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        :aria-label="`Rename ${criterion.name}`"
-                        @click="criterionBeingRenamed = criterion"
-                    >
-                        <Pencil />
-                    </Button>
-                    <Button
-                        v-if="criterion.retired_at"
-                        variant="ghost"
-                        size="icon-sm"
-                        :aria-label="`Bring back ${criterion.name}`"
-                        @click="restore(criterion)"
-                    >
-                        <ArchiveRestore />
-                    </Button>
-                    <Button
-                        v-else
-                        variant="ghost"
-                        size="icon-sm"
-                        :aria-label="`Remove ${criterion.name}`"
-                        @click="criterionBeingRemoved = criterion"
-                    >
-                        <Trash2 />
-                    </Button>
-                </div>
-            </li>
-        </ul>
+                            <Pencil />
+                        </Button>
+                        <Button
+                            v-if="criterion.retired_at"
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            :aria-label="`Bring back ${criterion.name}`"
+                            @click="restore(criterion)"
+                        >
+                            <ArchiveRestore />
+                        </Button>
+                        <Button
+                            v-else
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            :aria-label="`Remove ${criterion.name}`"
+                            @click="criterionBeingRemoved = criterion"
+                        >
+                            <Trash2 />
+                        </Button>
+                    </div>
+                </li>
+            </ul>
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <p class="max-w-md text-sm text-muted-foreground">
+                    A bigger weight makes a criterion count more. Saving
+                    recalculates the overall score of every rating and every
+                    risk level.
+                </p>
+                <Button type="submit" :disabled="processing">
+                    <Spinner v-if="processing" />
+                    Save weights
+                </Button>
+            </div>
+        </Form>
     </div>
 
     <RatingCriterionDialog

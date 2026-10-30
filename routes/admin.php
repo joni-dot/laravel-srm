@@ -107,6 +107,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.store');
 
+    Route::put('rating-criteria/weights', [RatingCriterionController::class, 'updateWeights'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.weights.update');
+
     Route::put('rating-criteria/{ratingCriterion}', [RatingCriterionController::class, 'update'])
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.update');

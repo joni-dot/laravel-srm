@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property string $name
+ * @property int $weight
  * @property CarbonImmutable|null $retired_at
  */
 #[Fillable(['name'])]

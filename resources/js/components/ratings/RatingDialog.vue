@@ -61,7 +61,8 @@ function todayAsDate(): string {
                 <DialogHeader>
                     <DialogTitle>Add rating</DialogTitle>
                     <DialogDescription>
-                        The overall score is the average of these scores.
+                        The overall score is the weighted average of these
+                        scores.
                     </DialogDescription>
                 </DialogHeader>
 
