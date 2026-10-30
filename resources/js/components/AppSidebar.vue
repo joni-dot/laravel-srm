@@ -6,6 +6,7 @@ import {
     FileText,
     LayoutGrid,
     Settings,
+    Star,
     Tags,
     Users,
 } from '@lucide/vue';
@@ -13,6 +14,7 @@ import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import CertificateTypeController from '@/actions/App/Http/Controllers/Admin/CertificateTypeController';
 import ContractTypeController from '@/actions/App/Http/Controllers/Admin/ContractTypeController';
+import RatingCriterionController from '@/actions/App/Http/Controllers/Admin/RatingCriterionController';
 import SettingsController from '@/actions/App/Http/Controllers/Admin/SettingsController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
@@ -72,6 +74,14 @@ const adminNavItems = computed<NavItem[]>(() => {
                 title: 'Contract types',
                 href: ContractTypeController.index(),
                 icon: FileText,
+            },
+        },
+        {
+            isVisible: can.manageRatingCriteria,
+            item: {
+                title: 'Rating criteria',
+                href: RatingCriterionController.index(),
+                icon: Star,
             },
         },
         {

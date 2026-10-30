@@ -6,6 +6,7 @@ import { reactive, watch } from 'vue';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
 import Heading from '@/components/Heading.vue';
 import Pagination from '@/components/Pagination.vue';
+import RiskLevelBadge from '@/components/risk/RiskLevelBadge.vue';
 import SupplierStatusBadge from '@/components/suppliers/SupplierStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +16,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import type {
     Category,
     Paginated,
+    RiskLevel,
     SelectOption,
     SupplierListItem,
     SupplierStatus,
@@ -31,12 +33,14 @@ const props = defineProps<{
     filters: {
         search: string;
         status: SupplierStatus | null;
+        risk: RiskLevel | null;
         category: number | null;
         archived: boolean;
         missing_certificates: boolean;
         contracts_action_soon: boolean;
     };
     statuses: SelectOption[];
+    riskLevels: SelectOption[];
     categories: Category[];
     can: { create: boolean; viewContracts: boolean };
 }>();
@@ -44,6 +48,7 @@ const props = defineProps<{
 const filters = reactive({
     search: props.filters.search,
     status: props.filters.status ?? '',
+    risk: props.filters.risk ?? '',
     category: props.filters.category ?? '',
     archived: props.filters.archived,
     missingCertificates: props.filters.missing_certificates,
@@ -56,6 +61,7 @@ function applyFilters(): void {
         {
             search: filters.search || undefined,
             status: filters.status || undefined,
+            risk: filters.risk || undefined,
             category: filters.category || undefined,
             archived: filters.archived ? 1 : undefined,
             missing_certificates: filters.missingCertificates ? 1 : undefined,
@@ -74,6 +80,7 @@ watch(() => filters.search, useDebounceFn(applyFilters, 300));
 watch(
     () => [
         filters.status,
+        filters.risk,
         filters.category,
         filters.archived,
         filters.missingCertificates,
@@ -128,6 +135,20 @@ watch(
                 </option>
             </NativeSelect>
             <NativeSelect
+                v-model="filters.risk"
+                aria-label="Filter by risk"
+                class="w-40"
+            >
+                <option value="">All risk levels</option>
+                <option
+                    v-for="level in riskLevels"
+                    :key="level.value"
+                    :value="level.value"
+                >
+                    {{ level.label }} risk
+                </option>
+            </NativeSelect>
+            <NativeSelect
                 v-model="filters.category"
                 aria-label="Filter by category"
                 class="w-52"
@@ -173,6 +194,10 @@ watch(
                             Categories
                         </th>
                         <th scope="col" class="px-4 py-3 font-medium">
+                            Rating
+                        </th>
+                        <th scope="col" class="px-4 py-3 font-medium">Risk</th>
+                        <th scope="col" class="px-4 py-3 font-medium">
                             Status
                         </th>
                     </tr>
@@ -212,13 +237,19 @@ watch(
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ supplier.categories.join(', ') }}
                         </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            {{ supplier.latest_rating_score ?? '—' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <RiskLevelBadge :level="supplier.risk_level" />
+                        </td>
                         <td class="px-4 py-3">
                             <SupplierStatusBadge :status="supplier.status" />
                         </td>
                     </tr>
                     <tr v-if="suppliers.data.length === 0">
                         <td
-                            colspan="5"
+                            colspan="7"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             No suppliers found.

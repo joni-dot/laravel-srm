@@ -5,7 +5,10 @@ use App\Http\Controllers\Suppliers\CertificateController;
 use App\Http\Controllers\Suppliers\ContactController;
 use App\Http\Controllers\Suppliers\ContractController;
 use App\Http\Controllers\Suppliers\DocumentController;
+use App\Http\Controllers\Suppliers\RatingController;
 use App\Http\Controllers\Suppliers\RestoreSupplierController;
+use App\Http\Controllers\Suppliers\RiskOverrideController;
+use App\Http\Controllers\Suppliers\SpendController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Models\Contract;
 use App\Models\Supplier;
@@ -114,5 +117,29 @@ Route::middleware('auth')->group(function () {
         Route::delete('suppliers/{supplier}/documents/{document}', [DocumentController::class, 'destroy'])
             ->can('delete', 'document')
             ->name('suppliers.documents.destroy');
+
+        Route::post('suppliers/{supplier}/ratings', [RatingController::class, 'store'])
+            ->can('update', 'supplier')
+            ->name('suppliers.ratings.store');
+
+        Route::delete('suppliers/{supplier}/ratings/{rating}', [RatingController::class, 'destroy'])
+            ->can('update', 'supplier')
+            ->name('suppliers.ratings.destroy');
+
+        Route::post('suppliers/{supplier}/spend', [SpendController::class, 'store'])
+            ->can('update', 'supplier')
+            ->name('suppliers.spend.store');
+
+        Route::delete('suppliers/{supplier}/spend/{spend}', [SpendController::class, 'destroy'])
+            ->can('update', 'supplier')
+            ->name('suppliers.spend.destroy');
+
+        Route::put('suppliers/{supplier}/risk', [RiskOverrideController::class, 'update'])
+            ->can('update', 'supplier')
+            ->name('suppliers.risk.update');
+
+        Route::delete('suppliers/{supplier}/risk', [RiskOverrideController::class, 'destroy'])
+            ->can('update', 'supplier')
+            ->name('suppliers.risk.destroy');
     });
 });

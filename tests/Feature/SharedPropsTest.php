@@ -27,6 +27,7 @@ class SharedPropsTest extends TestCase
                 ->where('auth.can.manageCategories', false)
                 ->where('auth.can.manageCertificateTypes', false)
                 ->where('auth.can.manageContractTypes', false)
+                ->where('auth.can.manageRatingCriteria', false)
                 ->where('auth.can.manageSettings', false)
             );
     }
@@ -40,6 +41,7 @@ class SharedPropsTest extends TestCase
                 ->where('auth.can.manageCategories', true)
                 ->where('auth.can.manageCertificateTypes', true)
                 ->where('auth.can.manageContractTypes', true)
+                ->where('auth.can.manageRatingCriteria', true)
                 ->where('auth.can.manageSettings', true)
             );
     }

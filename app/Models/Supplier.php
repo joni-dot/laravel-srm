@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\CertificateStatus;
 use App\Enums\Currency;
 use App\Enums\DeliveryTerm;
+use App\Enums\RiskLevel;
 use App\Enums\SupplierStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\SupplierFactory;
@@ -38,6 +40,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $notes
  * @property CarbonImmutable|null $archived_at
  * @property int $contracts_count
+ * @property string|null $latest_rating_score
+ * @property RiskLevel|null $risk_override
+ * @property string|null $risk_override_reason
+ * @property int|null $risk_overridden_by_user_id
+ * @property CarbonImmutable|null $risk_overridden_at
  */
 #[Fillable([
     'name', 'supplier_number', 'status', 'responsible_user_id', 'country_code', 'business_id', 'vat_number',
@@ -66,6 +73,9 @@ class Supplier extends Model
             'currency_code' => Currency::class,
             'delivery_term' => DeliveryTerm::class,
             'archived_at' => 'datetime',
+            'latest_rating_score' => 'decimal:2',
+            'risk_override' => RiskLevel::class,
+            'risk_overridden_at' => 'datetime',
         ];
     }
 
@@ -117,6 +127,36 @@ class Supplier extends Model
         return $this->hasMany(Document::class);
     }
 
+    /**
+     * @return HasMany<SupplierRating, $this>
+     */
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(SupplierRating::class);
+    }
+
+    /**
+     * @return HasMany<SupplierSpend, $this>
+     */
+    public function spends(): HasMany
+    {
+        return $this->hasMany(SupplierSpend::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function riskOverriddenBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'risk_overridden_by_user_id');
+    }
+
+    public function refreshLatestRatingScore(): void
+    {
+        $this->latest_rating_score = $this->ratings()->latest('rated_on')->latest('id')->value('overall_score');
+        $this->save();
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
@@ -138,6 +178,74 @@ class Supplier extends Model
                     ->currentlyValid()
                     ->whereColumn('certificates.supplier_id', 'suppliers.id')
                     ->whereColumn('certificates.certificate_type_id', 'certificate_types.id')));
+    }
+
+    /**
+     * Suppliers at this risk level: an override wins, otherwise the calculated level counts.
+     * Agrees with App\Compliance\SupplierRisk.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function withRiskLevel(Builder $query, RiskLevel $level): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->where('risk_override', $level)
+            ->orWhere(fn (Builder $query) => $query
+                ->whereNull('risk_override')
+                ->where(fn (Builder $query) => match ($level) {
+                    RiskLevel::High => $query->calculatedHighRisk(),
+                    RiskLevel::Medium => $query->calculatedAtLeastMediumRisk()->whereNot(fn (Builder $query) => $query->calculatedHighRisk()),
+                    RiskLevel::Low => $query->whereNot(fn (Builder $query) => $query->calculatedAtLeastMediumRisk()),
+                })));
+    }
+
+    /**
+     * Unrated suppliers count as top-rated here, because having no rating is not a risk signal.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function calculatedHighRisk(Builder $query): void
+    {
+        $query
+            ->where('status', SupplierStatus::Blocked)
+            ->orWhereRaw('COALESCE(latest_rating_score, 5) < ?', [RiskLevel::HIGH_RISK_RATING_BELOW])
+            ->orWhere(fn (Builder $query) => $query->missingRequiredCertificates());
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function calculatedAtLeastMediumRisk(Builder $query): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->calculatedHighRisk()
+            ->orWhereRaw('COALESCE(latest_rating_score, 5) < ?', [RiskLevel::MEDIUM_RISK_RATING_BELOW])
+            ->orWhere(fn (Builder $query) => $query->withExpiringCertificateNotReplaced()));
+    }
+
+    /**
+     * Has a certificate that is expired or expiring soon, with nothing of the same type lasting longer.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function withExpiringCertificateNotReplaced(Builder $query): void
+    {
+        $soon = today()->addDays(CertificateStatus::EXPIRING_SOON_DAYS);
+
+        $query->whereExists(Certificate::query()
+            ->whereColumn('certificates.supplier_id', 'suppliers.id')
+            ->where('certificates.expires_on', '<', $soon)
+            ->whereNotExists(Certificate::query()
+                ->from('certificates as replacement')
+                ->whereColumn('replacement.supplier_id', 'certificates.supplier_id')
+                ->whereColumn('replacement.certificate_type_id', 'certificates.certificate_type_id')
+                ->where(fn (Builder $query) => $query
+                    ->whereNull('replacement.expires_on')
+                    ->orWhere('replacement.expires_on', '>=', $soon))));
     }
 
     /**

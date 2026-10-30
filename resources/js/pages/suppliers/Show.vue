@@ -6,6 +6,9 @@ import ArchiveSupplierController from '@/actions/App/Http/Controllers/Suppliers/
 import RestoreSupplierController from '@/actions/App/Http/Controllers/Suppliers/RestoreSupplierController';
 import DocumentController from '@/actions/App/Http/Controllers/Suppliers/DocumentController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
+import RatingList from '@/components/ratings/RatingList.vue';
+import SupplierRiskPanel from '@/components/risk/SupplierRiskPanel.vue';
+import SpendList from '@/components/spend/SpendList.vue';
 import CertificateList from '@/components/certificates/CertificateList.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -16,16 +19,25 @@ import DetailItem from '@/components/suppliers/DetailItem.vue';
 import SupplierStatusBadge from '@/components/suppliers/SupplierStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { CertificateType, SupplierDetails } from '@/types';
+import type {
+    CertificateType,
+    RatingCriterion,
+    SelectOption,
+    SupplierDetails,
+} from '@/types';
 
 const props = defineProps<{
     supplier: SupplierDetails;
     certificateTypes: CertificateType[];
+    ratingCriteria: RatingCriterion[];
+    riskLevels: SelectOption[];
+    currencies: SelectOption[];
     can: {
         update: boolean;
         archive: boolean;
         restore: boolean;
         viewContracts: boolean;
+        viewSpend: boolean;
     };
 }>();
 
@@ -199,6 +211,29 @@ function restore(): void {
                 <p class="whitespace-pre-line">{{ supplier.notes }}</p>
             </DetailItem>
         </dl>
+
+        <SupplierRiskPanel
+            :supplier-id="supplier.id"
+            :risk="supplier.risk"
+            :risk-levels="riskLevels"
+            :can-edit="can.update"
+        />
+
+        <RatingList
+            :supplier-id="supplier.id"
+            :latest-score="supplier.latest_rating_score"
+            :ratings="supplier.ratings"
+            :criteria="ratingCriteria"
+            :can-edit="can.update"
+        />
+
+        <SpendList
+            v-if="can.viewSpend"
+            :supplier-id="supplier.id"
+            :spends="supplier.spends"
+            :currencies="currencies"
+            :can-edit="can.update"
+        />
 
         <CertificateList
             :supplier-id="supplier.id"

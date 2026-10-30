@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CertificateTypeController;
 use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\Admin\DeactivateUserController;
+use App\Http\Controllers\Admin\RatingCriterionController;
 use App\Http\Controllers\Admin\ReactivateUserController;
 use App\Http\Controllers\Admin\ResendInvitationController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Models\Category;
 use App\Models\CertificateType;
 use App\Models\ContractType;
+use App\Models\RatingCriterion;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -96,4 +98,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('contract-types/{contractType}', [ContractTypeController::class, 'destroy'])
         ->can('manage', ContractType::class)
         ->name('contract-types.destroy');
+
+    Route::get('rating-criteria', [RatingCriterionController::class, 'index'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.index');
+
+    Route::post('rating-criteria', [RatingCriterionController::class, 'store'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.store');
+
+    Route::put('rating-criteria/{ratingCriterion}', [RatingCriterionController::class, 'update'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.update');
+
+    Route::delete('rating-criteria/{ratingCriterion}', [RatingCriterionController::class, 'destroy'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.destroy');
+
+    Route::post('rating-criteria/{ratingCriterion}/restore', [RatingCriterionController::class, 'restore'])
+        ->can('manage', RatingCriterion::class)
+        ->name('rating-criteria.restore');
 });

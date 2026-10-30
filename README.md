@@ -37,6 +37,7 @@ Want something to click around in? Fill your local database with about 2,000 mad
 ./vendor/bin/sail artisan db:seed --class=DemoSupplierSeeder
 ./vendor/bin/sail artisan db:seed --class=DemoCertificateSeeder
 ./vendor/bin/sail artisan db:seed --class=DemoContractSeeder
+./vendor/bin/sail artisan db:seed --class=DemoRatingSeeder
 ```
 
 Emails (invitations, password resets, certificate reminders) are sent in the background by the `queue` container and show up in Mailpit at http://localhost:8025.
@@ -60,6 +61,18 @@ After changing PHP code that runs in the background, restart the workers with `.
 Admins can't change their own role or deactivate themselves, so there is always at least one admin. Users are deactivated, never deleted, so their history stays intact.
 
 Suppliers are archived, never deleted, and can be restored. Contacts are people, so they are truly deleted when removed.
+
+## Ratings, risk and spend
+
+- **Ratings:** buyers and admins score a supplier from 1 to 5 on each criterion. The overall score is the average, and the latest rating (by date) counts. Admins manage the criteria; a criterion old ratings use is retired, not deleted.
+- **Risk level** is calculated live, and buyers and admins can override it with a reason:
+    - **High:** the supplier is blocked, the latest rating is below 2.5, or a valid required certificate is missing.
+    - **Medium:** the latest rating is below 3.5, or a certificate has expired or expires within 30 days with no replacement.
+    - **Low:** everything else, including suppliers with no rating yet.
+- **Contracts are left out of risk on purpose:** viewers can see risk, but not contract details.
+- **Spend** is one amount per supplier per year, visible only to buyers and admins. Amounts in different currencies are not added together.
+
+The thresholds are in `app/Enums/RiskLevel.php`. The rules exist twice and must change together: `app/Compliance/SupplierRisk.php` (the page) and `Supplier::withRiskLevel()` (the list filter). `SupplierRiskTest` fails if they disagree.
 
 ## Contracts and documents
 

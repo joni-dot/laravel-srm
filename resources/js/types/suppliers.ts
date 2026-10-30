@@ -21,6 +21,8 @@ export type SupplierListItem = {
     city: string | null;
     categories: string[];
     missing_certificates: string[];
+    latest_rating_score: string | null;
+    risk_level: RiskLevel;
 };
 
 export type Certificate = {
@@ -73,6 +75,10 @@ export type SupplierDetails = {
     documents: SupplierDocument[];
     contracts_count: number;
     contracts: ContractSummary[];
+    latest_rating_score: string | null;
+    risk: SupplierRiskAssessment;
+    ratings: SupplierRating[];
+    spends: SupplierSpend[];
 };
 
 export type SupplierFormData = {
@@ -174,4 +180,42 @@ export type ContractFormOptions = {
     owners: { id: number; name: string }[];
     currencies: SelectOption[];
     valuePeriods: SelectOption[];
+};
+
+export type RiskLevel = 'low' | 'medium' | 'high';
+
+export type RiskSignal = {
+    level: RiskLevel;
+    message: string;
+};
+
+export type SupplierRiskAssessment = {
+    level: RiskLevel;
+    calculated_level: RiskLevel;
+    signals: RiskSignal[];
+    is_overridden: boolean;
+    reason: string | null;
+    overridden_by: string | null;
+    overridden_at: string | null;
+};
+
+export type SupplierRating = {
+    id: number;
+    rated_on: string;
+    rated_by: string | null;
+    overall_score: string;
+    comment: string | null;
+    scores: { criterion: string; score: number }[];
+};
+
+export type RatingCriterion = {
+    id: number;
+    name: string;
+};
+
+export type SupplierSpend = {
+    id: number;
+    year: number;
+    amount: string;
+    currency_code: string;
 };
