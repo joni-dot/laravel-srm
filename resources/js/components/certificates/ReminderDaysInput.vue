@@ -5,9 +5,13 @@ import { Input } from '@/components/ui/input';
 
 const MAX_REMINDERS = 5;
 
-defineProps<{
-    disabled?: boolean;
-}>();
+withDefaults(
+    defineProps<{
+        disabled?: boolean;
+        unitLabel?: string;
+    }>(),
+    { unitLabel: 'days before expiry' },
+);
 
 const days = defineModel<number[]>({ required: true });
 
@@ -38,9 +42,7 @@ function removeReminder(index: number): void {
                 :disabled="disabled"
                 :aria-label="`Reminder ${index + 1}, days before expiry`"
             />
-            <span class="text-sm text-muted-foreground"
-                >days before expiry</span
-            >
+            <span class="text-sm text-muted-foreground">{{ unitLabel }}</span>
             <Button
                 type="button"
                 variant="ghost"

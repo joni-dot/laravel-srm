@@ -34,10 +34,11 @@ const props = defineProps<{
         category: number | null;
         archived: boolean;
         missing_certificates: boolean;
+        contracts_action_soon: boolean;
     };
     statuses: SelectOption[];
     categories: Category[];
-    can: { create: boolean };
+    can: { create: boolean; viewContracts: boolean };
 }>();
 
 const filters = reactive({
@@ -46,6 +47,7 @@ const filters = reactive({
     category: props.filters.category ?? '',
     archived: props.filters.archived,
     missingCertificates: props.filters.missing_certificates,
+    contractsActionSoon: props.filters.contracts_action_soon,
 });
 
 function applyFilters(): void {
@@ -57,6 +59,7 @@ function applyFilters(): void {
             category: filters.category || undefined,
             archived: filters.archived ? 1 : undefined,
             missing_certificates: filters.missingCertificates ? 1 : undefined,
+            contracts_action_soon: filters.contractsActionSoon ? 1 : undefined,
         },
         {
             only: ['suppliers', 'filters'],
@@ -74,6 +77,7 @@ watch(
         filters.category,
         filters.archived,
         filters.missingCertificates,
+        filters.contractsActionSoon,
     ],
     applyFilters,
 );
@@ -140,6 +144,13 @@ watch(
             <Label class="flex items-center gap-2 font-normal">
                 <Checkbox v-model="filters.missingCertificates" />
                 Missing certificates
+            </Label>
+            <Label
+                v-if="can.viewContracts"
+                class="flex items-center gap-2 font-normal"
+            >
+                <Checkbox v-model="filters.contractsActionSoon" />
+                Contracts needing action
             </Label>
             <Label class="flex items-center gap-2 font-normal">
                 <Checkbox v-model="filters.archived" />

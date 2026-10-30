@@ -36,6 +36,7 @@ Want something to click around in? Fill your local database with about 2,000 mad
 ```bash
 ./vendor/bin/sail artisan db:seed --class=DemoSupplierSeeder
 ./vendor/bin/sail artisan db:seed --class=DemoCertificateSeeder
+./vendor/bin/sail artisan db:seed --class=DemoContractSeeder
 ```
 
 Emails (invitations, password resets, certificate reminders) are sent in the background by the `queue` container and show up in Mailpit at http://localhost:8025.
@@ -59,6 +60,21 @@ After changing PHP code that runs in the background, restart the workers with `.
 Admins can't change their own role or deactivate themselves, so there is always at least one admin. Users are deactivated, never deleted, so their history stays intact.
 
 Suppliers are archived, never deleted, and can be restored. Contacts are people, so they are truly deleted when removed.
+
+## Contracts and documents
+
+- **Who sees what:** everyone can see how many contracts a supplier has. Only buyers and admins can see contract details, values and files.
+- **Key date:** reminders count back from the last day to cancel for auto-renewing contracts, and from the end date for the rest.
+- **Auto-renewal:** every morning at 05:30 (UTC), active auto-renewing contracts past their end date move forward by their renewal term. Set a contract to Terminated to stop this.
+- **Reminders** go to the contract owner, then the responsible buyer, then the reminder email under **Settings**. Emails never include prices.
+- **Documents** (PDF, JPG, PNG, .docx, .xlsx, up to 20 MB) are stored privately. Macro-enabled Office files are rejected.
+
+To run these jobs right away while testing:
+
+```bash
+./vendor/bin/sail artisan app:renew-contracts
+./vendor/bin/sail artisan app:send-contract-reminders
+```
 
 ## Certificates
 

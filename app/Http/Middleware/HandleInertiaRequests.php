@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Category;
 use App\Models\CertificateType;
+use App\Models\ContractType;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -48,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'manageUsers' => (bool) $request->user()?->can('viewAny', User::class),
                     'manageCategories' => (bool) $request->user()?->can('manage', Category::class),
                     'manageCertificateTypes' => (bool) $request->user()?->can('manage', CertificateType::class),
+                    'manageContractTypes' => (bool) $request->user()?->can('manage', ContractType::class),
                     'manageSettings' => (bool) $request->user()?->can('manage', Setting::class),
                 ],
             ],

@@ -70,6 +70,9 @@ export type SupplierDetails = {
     contacts: Contact[];
     certificates: Certificate[];
     missing_certificates: string[];
+    documents: SupplierDocument[];
+    contracts_count: number;
+    contracts: ContractSummary[];
 };
 
 export type SupplierFormData = {
@@ -107,4 +110,68 @@ export type SupplierFormOptions = {
 export type CertificateType = {
     id: number;
     name: string;
+};
+
+export type SupplierDocument = {
+    id: number;
+    file_name: string;
+    file_size: number;
+};
+
+export type ContractHealth =
+    | 'draft'
+    | 'active'
+    | 'action_soon'
+    | 'expired'
+    | 'terminated';
+
+export type ContractSummary = {
+    id: number;
+    title: string;
+    contract_number: string | null;
+    type: string;
+    health: ContractHealth;
+    auto_renews: boolean;
+    action_by: string | null;
+    value: string | null;
+    currency_code: string | null;
+    value_period: string | null;
+};
+
+export type ContractDetails = ContractSummary & {
+    owner: string | null;
+    starts_on: string | null;
+    ends_on: string | null;
+    renewal_term_months: number | null;
+    notice_period_days: number | null;
+    notes: string | null;
+    reminder_days: number[];
+    documents: SupplierDocument[];
+};
+
+export type ContractFormData = {
+    id: number;
+    title: string;
+    contract_number: string | null;
+    contract_type_id: number;
+    status: string;
+    owner_user_id: number | null;
+    starts_on: string | null;
+    ends_on: string | null;
+    auto_renews: boolean;
+    renewal_term_months: number | null;
+    notice_period_days: number | null;
+    value: string | null;
+    currency_code: string | null;
+    value_period: string | null;
+    notes: string | null;
+    reminder_days: number[];
+};
+
+export type ContractFormOptions = {
+    statuses: SelectOption[];
+    contractTypes: { id: number; name: string }[];
+    owners: { id: number; name: string }[];
+    currencies: SelectOption[];
+    valuePeriods: SelectOption[];
 };

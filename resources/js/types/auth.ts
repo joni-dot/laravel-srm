@@ -14,6 +14,7 @@ export type Auth = {
         manageUsers: boolean;
         manageCategories: boolean;
         manageCertificateTypes: boolean;
+        manageContractTypes: boolean;
         manageSettings: boolean;
     };
 };

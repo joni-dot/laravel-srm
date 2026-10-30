@@ -13,6 +13,7 @@ class UniqueIgnoringCase implements ValidationRule
 {
     /**
      * @param  class-string<Model>  $model
+     * @param  literal-string  $column  Fixed text from the code, never user input, because it becomes part of the SQL.
      */
     public function __construct(
         private readonly string $model,

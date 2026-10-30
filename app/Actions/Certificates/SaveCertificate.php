@@ -2,6 +2,7 @@
 
 namespace App\Actions\Certificates;
 
+use App\Actions\Reminders\SyncReminders;
 use App\Models\Certificate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,8 @@ class SaveCertificate
      * Files live on the private disk, which is never served directly by the web server.
      */
     public const string DISK = 'local';
+
+    public function __construct(private readonly SyncReminders $syncReminders) {}
 
     /**
      * @param  array<string, mixed>  $attributes
@@ -36,7 +39,7 @@ class SaveCertificate
                 }
 
                 $certificate->save();
-                $this->syncReminders($certificate, $reminderDays);
+                $this->syncReminders->handle($certificate->reminders(), $certificate->expires_on, $reminderDays);
             });
         } catch (Throwable $exception) {
             if ($storedFilePath) {
@@ -51,31 +54,5 @@ class SaveCertificate
         }
 
         return $certificate;
-    }
-
-    /**
-     * Keep a reminder that is unchanged, so one that was already sent is not sent again.
-     *
-     * @param  list<int>  $reminderDays
-     */
-    private function syncReminders(Certificate $certificate, array $reminderDays): void
-    {
-        $expiresOn = $certificate->expires_on;
-        $wantedDays = $expiresOn === null ? [] : $reminderDays;
-
-        $certificate->reminders()->whereNotIn('days_before', $wantedDays)->delete();
-
-        foreach ($wantedDays as $daysBefore) {
-            $remindOn = $expiresOn->subDays($daysBefore);
-            $reminder = $certificate->reminders()->firstOrNew(['days_before' => $daysBefore]);
-
-            if ($reminder->exists && $reminder->remind_on->equalTo($remindOn)) {
-                continue;
-            }
-
-            $reminder->remind_on = $remindOn;
-            $reminder->sent_at = null;
-            $reminder->save();
-        }
     }
 }

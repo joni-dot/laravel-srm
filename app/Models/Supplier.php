@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $delivery_place
  * @property string|null $notes
  * @property CarbonImmutable|null $archived_at
+ * @property int $contracts_count
  */
 #[Fillable([
     'name', 'supplier_number', 'status', 'responsible_user_id', 'country_code', 'business_id', 'vat_number',
@@ -98,6 +99,22 @@ class Supplier extends Model
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * @return HasMany<Contract, $this>
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    /**
+     * @return HasMany<Document, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
     }
 
     public function isArchived(): bool

@@ -4,10 +4,13 @@ import { Archive, ArchiveRestore, Pencil, TriangleAlert } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ArchiveSupplierController from '@/actions/App/Http/Controllers/Suppliers/ArchiveSupplierController';
 import RestoreSupplierController from '@/actions/App/Http/Controllers/Suppliers/RestoreSupplierController';
+import DocumentController from '@/actions/App/Http/Controllers/Suppliers/DocumentController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
 import CertificateList from '@/components/certificates/CertificateList.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
+import ContractList from '@/components/contracts/ContractList.vue';
+import DocumentList from '@/components/documents/DocumentList.vue';
 import ContactList from '@/components/suppliers/ContactList.vue';
 import DetailItem from '@/components/suppliers/DetailItem.vue';
 import SupplierStatusBadge from '@/components/suppliers/SupplierStatusBadge.vue';
@@ -18,7 +21,12 @@ import type { CertificateType, SupplierDetails } from '@/types';
 const props = defineProps<{
     supplier: SupplierDetails;
     certificateTypes: CertificateType[];
-    can: { update: boolean; archive: boolean; restore: boolean };
+    can: {
+        update: boolean;
+        archive: boolean;
+        restore: boolean;
+        viewContracts: boolean;
+    };
 }>();
 
 setLayoutProps({
@@ -32,6 +40,12 @@ setLayoutProps({
 });
 
 const isConfirmingArchive = ref(false);
+
+const contractCount = computed(() =>
+    props.supplier.contracts_count === 1
+        ? '1 contract'
+        : `${props.supplier.contracts_count} contracts`,
+);
 
 const address = computed(() =>
     [
@@ -190,6 +204,29 @@ function restore(): void {
             :supplier-id="supplier.id"
             :certificates="supplier.certificates"
             :certificate-types="certificateTypes"
+            :can-edit="can.update"
+        />
+
+        <ContractList
+            v-if="can.viewContracts"
+            :supplier-id="supplier.id"
+            :contracts="supplier.contracts"
+            :can-edit="can.update"
+        />
+        <section v-else class="space-y-2">
+            <Heading variant="small" title="Contracts" />
+            <p class="text-sm text-muted-foreground">
+                {{ contractCount }}. Only buyers and admins can see the details.
+            </p>
+        </section>
+
+        <DocumentList
+            title="Documents"
+            :supplier-id="supplier.id"
+            :documents="supplier.documents"
+            :upload-action="
+                DocumentController.storeForSupplier.form(supplier.id)
+            "
             :can-edit="can.update"
         />
 

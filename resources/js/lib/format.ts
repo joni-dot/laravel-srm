@@ -15,3 +15,13 @@ export function formatFileSize(bytes: number): string {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Shows a stored amount such as "120000.00" with its currency, in the user's own number format.
+ */
+export function formatMoney(amount: string, currencyCode: string): string {
+    return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currencyCode,
+    }).format(Number(amount));
+}

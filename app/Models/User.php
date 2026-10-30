@@ -8,6 +8,8 @@ use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -61,6 +63,17 @@ class User extends Authenticatable implements PasskeyUser
             'role' => Role::class,
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * People who can be made responsible for suppliers and contracts.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function activeBuyersAndAdmins(Builder $query): void
+    {
+        $query->whereIn('role', [Role::Admin, Role::Buyer])->whereNull('deactivated_at');
     }
 
     public function isAdmin(): bool

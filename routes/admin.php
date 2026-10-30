@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CertificateTypeController;
+use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\Admin\DeactivateUserController;
 use App\Http\Controllers\Admin\ReactivateUserController;
 use App\Http\Controllers\Admin\ResendInvitationController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Models\Category;
 use App\Models\CertificateType;
+use App\Models\ContractType;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -78,4 +80,20 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('settings', [SettingsController::class, 'update'])
         ->can('manage', Setting::class)
         ->name('settings.update');
+
+    Route::get('contract-types', [ContractTypeController::class, 'index'])
+        ->can('manage', ContractType::class)
+        ->name('contract-types.index');
+
+    Route::post('contract-types', [ContractTypeController::class, 'store'])
+        ->can('manage', ContractType::class)
+        ->name('contract-types.store');
+
+    Route::put('contract-types/{contractType}', [ContractTypeController::class, 'update'])
+        ->can('manage', ContractType::class)
+        ->name('contract-types.update');
+
+    Route::delete('contract-types/{contractType}', [ContractTypeController::class, 'destroy'])
+        ->can('manage', ContractType::class)
+        ->name('contract-types.destroy');
 });

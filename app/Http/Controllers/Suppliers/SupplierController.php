@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Suppliers;
 use App\Compliance\RequiredCertificates;
 use App\Enums\Currency;
 use App\Enums\DeliveryTerm;
-use App\Enums\Role;
 use App\Enums\SupplierStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Suppliers\SupplierRequest;
@@ -13,6 +12,8 @@ use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\CertificateType;
 use App\Models\Contact;
+use App\Models\Contract;
+use App\Models\Document;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -28,12 +29,15 @@ class SupplierController extends Controller
 
     public function index(Request $request, RequiredCertificates $requiredCertificates): Response
     {
+        $canViewContracts = $request->user()->can('viewDetails', Contract::class);
+
         $filters = [
             'search' => $request->string('search')->trim()->limit(100, '')->toString(),
             'status' => $request->enum('status', SupplierStatus::class),
             'category' => $request->integer('category') ?: null,
             'archived' => $request->boolean('archived'),
             'missing_certificates' => $request->boolean('missing_certificates'),
+            'contracts_action_soon' => $canViewContracts && $request->boolean('contracts_action_soon'),
         ];
 
         $suppliers = Supplier::query()
@@ -48,6 +52,7 @@ class SupplierController extends Controller
             ->when($filters['status'], fn ($query, $status) => $query->where('status', $status))
             ->when($filters['category'], fn ($query, $categoryId) => $query->whereRelation('categories', 'categories.id', $categoryId))
             ->when($filters['missing_certificates'], fn ($query) => $query->missingRequiredCertificates())
+            ->when($filters['contracts_action_soon'], fn ($query) => $query->whereHas('contracts', fn ($contracts) => $contracts->needingActionSoon()))
             ->orderBy('name')
             ->paginate(self::SUPPLIERS_PER_PAGE)
             ->withQueryString();
@@ -72,17 +77,22 @@ class SupplierController extends Controller
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'create' => $request->user()->can('create', Supplier::class),
+                'viewContracts' => $canViewContracts,
             ],
         ]);
     }
 
     public function show(Request $request, Supplier $supplier, RequiredCertificates $requiredCertificates): Response
     {
+        $canViewContracts = $request->user()->can('viewDetails', Contract::class);
+
+        $supplier->loadCount('contracts');
         $supplier->load([
             'categories:id,name',
             'responsibleUser:id,name',
             'contacts' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('name'),
             'certificates' => fn ($query) => $query->with(['type:id,name', 'reminders:id,certificate_id,days_before'])->orderByDesc('expires_on'),
+            'documents' => fn ($query) => $query->whereNull('contract_id')->orderBy('file_name'),
         ]);
 
         return Inertia::render('suppliers/Show', [
@@ -109,12 +119,16 @@ class SupplierController extends Controller
                     'reminder_days' => $certificate->reminders->pluck('days_before')->sortDesc()->values(),
                 ]),
                 'missing_certificates' => $requiredCertificates->missingFor(collect([$supplier]))[$supplier->id] ?? [],
+                'documents' => $supplier->documents->map(fn (Document $document) => $document->only(['id', 'file_name', 'file_size'])),
+                'contracts_count' => $supplier->contracts_count,
+                'contracts' => $canViewContracts ? $this->contractSummaries($supplier) : [],
             ],
             'certificateTypes' => CertificateType::query()->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'update' => $request->user()->can('update', $supplier),
                 'archive' => $request->user()->can('archive', $supplier),
                 'restore' => $request->user()->can('restore', $supplier),
+                'viewContracts' => $canViewContracts,
             ],
         ]);
     }
@@ -166,6 +180,27 @@ class SupplierController extends Controller
     }
 
     /**
+     * Only ever call this for people allowed to see contract details.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function contractSummaries(Supplier $supplier): array
+    {
+        return array_values($supplier->contracts()
+            ->with('type:id,name')
+            ->orderByRaw('action_by ASC NULLS LAST')
+            ->get()
+            ->map(fn (Contract $contract) => [
+                ...$contract->only(['id', 'title', 'contract_number', 'auto_renews', 'value', 'currency_code']),
+                'type' => $contract->type->name,
+                'health' => $contract->health(),
+                'action_by' => $contract->action_by?->toDateString(),
+                'value_period' => $contract->value_period?->label(),
+            ])
+            ->all());
+    }
+
+    /**
      * The choices shown in the supplier form's drop-downs.
      *
      * @return array<string, mixed>
@@ -175,8 +210,7 @@ class SupplierController extends Controller
         return [
             'statuses' => SupplierStatus::options(),
             'responsibleUsers' => User::query()
-                ->whereIn('role', [Role::Admin, Role::Buyer])
-                ->whereNull('deactivated_at')
+                ->activeBuyersAndAdmins()
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'countries' => collect(Countries::getNames())

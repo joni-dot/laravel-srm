@@ -3,8 +3,11 @@
 use App\Http\Controllers\Suppliers\ArchiveSupplierController;
 use App\Http\Controllers\Suppliers\CertificateController;
 use App\Http\Controllers\Suppliers\ContactController;
+use App\Http\Controllers\Suppliers\ContractController;
+use App\Http\Controllers\Suppliers\DocumentController;
 use App\Http\Controllers\Suppliers\RestoreSupplierController;
 use App\Http\Controllers\Suppliers\SupplierController;
+use App\Models\Contract;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\Route;
 
@@ -70,5 +73,46 @@ Route::middleware('auth')->group(function () {
         Route::get('suppliers/{supplier}/certificates/{certificate}/file', [CertificateController::class, 'download'])
             ->can('view', 'supplier')
             ->name('suppliers.certificates.download');
+
+        // "update" on the supplier already means buyer or admin, and blocks archived suppliers.
+        Route::get('suppliers/{supplier}/contracts/create', [ContractController::class, 'create'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.create');
+
+        Route::post('suppliers/{supplier}/contracts', [ContractController::class, 'store'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.store');
+
+        Route::get('suppliers/{supplier}/contracts/{contract}', [ContractController::class, 'show'])
+            ->can('viewDetails', Contract::class)
+            ->name('suppliers.contracts.show');
+
+        Route::get('suppliers/{supplier}/contracts/{contract}/edit', [ContractController::class, 'edit'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.edit');
+
+        Route::put('suppliers/{supplier}/contracts/{contract}', [ContractController::class, 'update'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.update');
+
+        Route::delete('suppliers/{supplier}/contracts/{contract}', [ContractController::class, 'destroy'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.destroy');
+
+        Route::post('suppliers/{supplier}/contracts/{contract}/documents', [DocumentController::class, 'storeForContract'])
+            ->can('update', 'supplier')
+            ->name('suppliers.contracts.documents.store');
+
+        Route::post('suppliers/{supplier}/documents', [DocumentController::class, 'storeForSupplier'])
+            ->can('update', 'supplier')
+            ->name('suppliers.documents.store');
+
+        Route::get('suppliers/{supplier}/documents/{document}/file', [DocumentController::class, 'download'])
+            ->can('view', 'document')
+            ->name('suppliers.documents.download');
+
+        Route::delete('suppliers/{supplier}/documents/{document}', [DocumentController::class, 'destroy'])
+            ->can('delete', 'document')
+            ->name('suppliers.documents.destroy');
     });
 });
