@@ -15,9 +15,10 @@ The host has only Docker and git. Run PHP and Node commands through Sail.
 ./vendor/bin/sail composer lint          # fix PHP style
 ./vendor/bin/sail pnpm run check:fix     # fix frontend style and lint
 ./vendor/bin/sail restart queue scheduler  # after changing PHP that runs in the background
+tests/Browser/run.sh                     # real-browser tests, run from the host; see /browser-test
 ```
 
-`ci:check` runs the frontend checks, TypeScript, Pint, PHPStan and all tests. GitHub runs the same command on every pull request.
+`ci:check` runs the frontend checks, TypeScript, Pint, PHPStan and all tests. GitHub runs the same command and the browser tests on every pull request.
 
 If a result makes no sense, Docker Desktop may have missed a quick file edit. Compare the file's sha256 on the host and in the container. If they differ, run `sail down` and then `sail up -d`.
 
@@ -34,7 +35,7 @@ If a result makes no sense, Docker Desktop may have missed a quick file edit. Co
 - **Security must be flawless.** Follow the security rules in the README.
 - **Performance is a top priority.** Avoid repeated queries in lists, and check new filters against the demo data (about 2,000 suppliers).
 - **Code explains itself** through clear names and small functions. Comments are for why, not what.
-- **New behaviour comes with tests.**
+- **New behaviour comes with tests.** Add a browser test in `tests/Browser` when a feature adds a page or a user flow.
 - **Report the result.** Every change summary includes a short security and performance check.
 - **Explain in plain language.** Keep it brief, define unavoidable technical terms and give the reason for each decision. Ask when a choice is really the user's to make.
 

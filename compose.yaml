@@ -96,6 +96,47 @@ services:
             - '127.0.0.1:${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+    # Used only by tests/Browser/run.sh. They publish no ports to the computer.
+    browser-app:
+        image: 'sail-8.5/app'
+        profiles:
+            - browser-tests
+        command: 'bash tests/Browser/serve.sh'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - '--silent'
+                - '--fail'
+                - '--output'
+                - /dev/null
+                - 'http://localhost:8001/login'
+            interval: 2s
+            retries: 60
+            timeout: 5s
+    # The image version must match @playwright/test in package.json and the CI workflow.
+    playwright:
+        image: 'mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f'
+        profiles:
+            - browser-tests
+        user: '${WWWUSER}:${WWWGROUP}'
+        working_dir: /app
+        # Sharing the app's network makes it "localhost", which Chrome treats as secure, like HTTPS.
+        network_mode: 'service:browser-app'
+        environment:
+            HOME: /tmp
+        volumes:
+            - '.:/app'
 networks:
     sail:
         driver: bridge

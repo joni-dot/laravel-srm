@@ -72,3 +72,28 @@ jobs:
 
       - name: Run CI Checks
         run: composer ci:check
+
+      - name: Start App for Browser Tests
+        run: |
+          bash tests/Browser/serve.sh > browser-app.log 2>&1 &
+          curl --silent --fail --retry 30 --retry-delay 2 --retry-all-errors --output /dev/null http://localhost:8001/login
+
+      # The image version must match @playwright/test in package.json and compose.yaml.
+      - name: Run Browser Tests
+        run: >-
+          docker run --rm --network host
+          --user "$(id -u):$(id -g)" --env HOME=/tmp --env CI=true
+          --volume "$PWD":/app --workdir /app
+          mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+          node_modules/.bin/playwright test
+
+      - name: Keep Browser Test Results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-test-results
+          path: |
+            tests/Browser/.output
+            browser-app.log
+          include-hidden-files: true
+          retention-days: 7
