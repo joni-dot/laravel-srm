@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\BrowserTestSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoCertificateSeeder;
 use Database\Seeders\DemoContractSeeder;
@@ -46,6 +47,7 @@ class SeedersRefuseProductionTest extends TestCase
             'demo certificates' => [DemoCertificateSeeder::class],
             'demo contracts' => [DemoContractSeeder::class],
             'demo ratings' => [DemoRatingSeeder::class],
+            'browser test data' => [BrowserTestSeeder::class],
         ];
     }
 }

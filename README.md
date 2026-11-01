@@ -107,6 +107,21 @@ To run these jobs right away while testing:
 
 Tip: add `alias sail='./vendor/bin/sail'` to your shell config to type less.
 
+## Browser tests
+
+The tests in `tests/Browser` use a real Chrome browser to sign in as each role, click through the main features and check that viewers never receive contract or spend data. Every test also fails on a JavaScript error or a blocked script.
+
+```bash
+tests/Browser/run.sh                 # run all of them (about 1.5 minutes)
+tests/Browser/run.sh viewer          # run only the files matching "viewer"
+```
+
+They run on a separate copy of the app that erases and refills the `testing` database, so your development data, files and emails are not touched. Don't run them at the same time as `sail artisan test`, which uses the same database. Stop `pnpm run dev` first.
+
+If a test fails, the screenshot and a step-by-step trace are in `tests/Browser/.output`. On GitHub, they are attached to the failed run.
+
+The Playwright version is set in three places that must match: `package.json`, `compose.yaml` and `.github/workflows/tests.yml`.
+
 ## Security rules for developers
 
 - **No inline JavaScript.** The Content Security Policy only lets the browser run scripts from this app's own files. `<script>` blocks, `onclick="..."` attributes and scripts from other websites are blocked. If a Blade view truly needs an inline script, give it `nonce="{{ Vite::cspNonce() }}"`.

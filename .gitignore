@@ -39,7 +39,8 @@ yarn-error.log
 /.zed
 /.agents
 /.amp
-/.claude
+/.claude/*
+!/.claude/skills/
 /.codex
 /.cursor
 /.factory
@@ -52,3 +53,6 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+
+/tests/Browser/.auth
+/tests/Browser/.output
