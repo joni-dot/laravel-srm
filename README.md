@@ -18,7 +18,7 @@ A web app for procurement teams to manage supplier information. It works as a si
 You only need **Docker** and **git**. Everything else runs inside containers.
 
 ```bash
-cp .env.example .env                 # then set DB_PASSWORD to a long random value
+cp .env.example .env                 # then set DB_PASSWORD to a long random value (Docker will not start without it)
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/app -w /app composer:latest composer install
 ./vendor/bin/sail build              # build the app image (first time only)
 ./vendor/bin/sail up -d              # start the app, database, Redis, Mailpit and the queue worker
