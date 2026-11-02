@@ -35,6 +35,7 @@ If a result makes no sense, Docker Desktop may have missed a quick file edit. Co
 - **Security must be flawless.** Follow the security rules in the README.
 - **Performance is a top priority.** Avoid repeated queries in lists, and check new filters against the demo data (about 2,000 suppliers).
 - **Code explains itself** through clear names and small functions. Comments are for why, not what.
+- **Controllers follow CRUD where it makes sense.** Use only `index`, `create`, `store`, `show`, `edit`, `update` and `destroy`, and leave out the ones a feature doesn't need. An action that doesn't fit CRUD, or a controller that would have only one method, becomes a single-action controller named verb + noun (for example `ArchiveSupplierController`).
 - **New behaviour comes with tests.** Add a browser test in `tests/Browser` when a feature adds a page or a user flow.
 - **Report the result.** Every change summary includes a short security and performance check.
 - **Explain in plain language.** Keep it brief, define unavoidable technical terms and give the reason for each decision. Ask when a choice is really the user's to make.

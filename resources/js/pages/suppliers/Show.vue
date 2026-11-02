@@ -259,9 +259,7 @@ function restore(): void {
             title="Documents"
             :supplier-id="supplier.id"
             :documents="supplier.documents"
-            :upload-action="
-                DocumentController.storeForSupplier.form(supplier.id)
-            "
+            :upload-action="DocumentController.store.form(supplier.id)"
             :can-edit="can.update"
         />
 

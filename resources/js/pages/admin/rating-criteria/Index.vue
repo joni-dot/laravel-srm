@@ -3,6 +3,8 @@ import { Form, Head, router } from '@inertiajs/vue3';
 import { ArchiveRestore, Pencil, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import RatingCriterionController from '@/actions/App/Http/Controllers/Admin/RatingCriterionController';
+import RestoreRatingCriterionController from '@/actions/App/Http/Controllers/Admin/RestoreRatingCriterionController';
+import UpdateRatingWeightsController from '@/actions/App/Http/Controllers/Admin/UpdateRatingWeightsController';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -105,7 +107,7 @@ function removalDescription(criterion: CriterionRow): string {
 
 function restore(criterion: CriterionRow): void {
     router.post(
-        RatingCriterionController.restore.url(criterion.id),
+        RestoreRatingCriterionController.url(criterion.id),
         {},
         { preserveScroll: true },
     );
@@ -131,7 +133,7 @@ function restore(criterion: CriterionRow): void {
 
         <Form
             v-else
-            v-bind="RatingCriterionController.updateWeights.form()"
+            v-bind="UpdateRatingWeightsController.form()"
             :options="{ preserveScroll: true }"
             class="space-y-4"
             v-slot="{ errors, processing }"

@@ -3,8 +3,8 @@ import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { Pencil, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ContractController from '@/actions/App/Http/Controllers/Suppliers/ContractController';
-import DocumentController from '@/actions/App/Http/Controllers/Suppliers/DocumentController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
+import UploadContractDocumentController from '@/actions/App/Http/Controllers/Suppliers/UploadContractDocumentController';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import ContractHealthBadge from '@/components/contracts/ContractHealthBadge.vue';
 import DocumentList from '@/components/documents/DocumentList.vue';
@@ -136,7 +136,7 @@ const reminders = computed(() => {
             title="Documents"
             :supplier-id="supplier.id"
             :documents="contract.documents"
-            :upload-action="DocumentController.storeForContract.form(route)"
+            :upload-action="UploadContractDocumentController.form(route)"
             :can-edit="can.update"
         />
     </div>

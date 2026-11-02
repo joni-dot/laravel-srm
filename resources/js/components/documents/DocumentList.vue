@@ -48,7 +48,7 @@ const documentBeingDeleted = ref<SupplierDocument | null>(null);
             >
                 <a
                     :href="
-                        DocumentController.download.url({
+                        DocumentController.show.url({
                             supplier: supplierId,
                             document: document.id,
                         })

@@ -58,7 +58,7 @@ class CertificateController extends Controller
     /**
      * Always sent as a download, never shown inside the app, so a crafted file cannot run in the app's context.
      */
-    public function download(Supplier $supplier, Certificate $certificate): StreamedResponse
+    public function show(Supplier $supplier, Certificate $certificate): StreamedResponse
     {
         abort_unless($certificate->file_path && $certificate->file_name, 404);
 
