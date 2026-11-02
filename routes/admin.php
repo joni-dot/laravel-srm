@@ -7,7 +7,9 @@ use App\Http\Controllers\Admin\DeactivateUserController;
 use App\Http\Controllers\Admin\RatingCriterionController;
 use App\Http\Controllers\Admin\ReactivateUserController;
 use App\Http\Controllers\Admin\ResendInvitationController;
+use App\Http\Controllers\Admin\RestoreRatingCriterionController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UpdateRatingWeightsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Models\Category;
 use App\Models\CertificateType;
@@ -107,7 +109,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.store');
 
-    Route::put('rating-criteria/weights', [RatingCriterionController::class, 'updateWeights'])
+    Route::put('rating-criteria/weights', UpdateRatingWeightsController::class)
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.weights.update');
 
@@ -119,7 +121,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.destroy');
 
-    Route::post('rating-criteria/{ratingCriterion}/restore', [RatingCriterionController::class, 'restore'])
+    Route::post('rating-criteria/{ratingCriterion}/restore', RestoreRatingCriterionController::class)
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.restore');
 });

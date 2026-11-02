@@ -103,7 +103,7 @@ function reminderSummary(certificate: Certificate): string {
                             <a
                                 v-if="certificate.file_name"
                                 :href="
-                                    CertificateController.download.url({
+                                    CertificateController.show.url({
                                         supplier: supplierId,
                                         certificate: certificate.id,
                                     })

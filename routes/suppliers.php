@@ -10,6 +10,7 @@ use App\Http\Controllers\Suppliers\RestoreSupplierController;
 use App\Http\Controllers\Suppliers\RiskOverrideController;
 use App\Http\Controllers\Suppliers\SpendController;
 use App\Http\Controllers\Suppliers\SupplierController;
+use App\Http\Controllers\Suppliers\UploadContractDocumentController;
 use App\Models\Contract;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\Route;
@@ -73,7 +74,7 @@ Route::middleware('auth')->group(function () {
             ->can('update', 'supplier')
             ->name('suppliers.certificates.destroy');
 
-        Route::get('suppliers/{supplier}/certificates/{certificate}/file', [CertificateController::class, 'download'])
+        Route::get('suppliers/{supplier}/certificates/{certificate}/file', [CertificateController::class, 'show'])
             ->can('view', 'supplier')
             ->name('suppliers.certificates.download');
 
@@ -102,15 +103,15 @@ Route::middleware('auth')->group(function () {
             ->can('update', 'supplier')
             ->name('suppliers.contracts.destroy');
 
-        Route::post('suppliers/{supplier}/contracts/{contract}/documents', [DocumentController::class, 'storeForContract'])
+        Route::post('suppliers/{supplier}/contracts/{contract}/documents', UploadContractDocumentController::class)
             ->can('update', 'supplier')
             ->name('suppliers.contracts.documents.store');
 
-        Route::post('suppliers/{supplier}/documents', [DocumentController::class, 'storeForSupplier'])
+        Route::post('suppliers/{supplier}/documents', [DocumentController::class, 'store'])
             ->can('update', 'supplier')
             ->name('suppliers.documents.store');
 
-        Route::get('suppliers/{supplier}/documents/{document}/file', [DocumentController::class, 'download'])
+        Route::get('suppliers/{supplier}/documents/{document}/file', [DocumentController::class, 'show'])
             ->can('view', 'document')
             ->name('suppliers.documents.download');
 
