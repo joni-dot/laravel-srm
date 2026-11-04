@@ -95,6 +95,13 @@ To run these jobs right away while testing:
 - Admins can mark a certificate type as **required**. Active suppliers without a valid certificate of that type are flagged in the supplier list.
 - Uploaded files (PDF, JPG, PNG, up to 10 MB) are stored privately and can only be downloaded by signed-in users.
 
+## Comments
+
+- **Who writes:** buyers and admins can comment on a supplier and on its contracts. Everyone can read supplier comments; contract comments are for buyers and admins only, like the rest of the contract.
+- **Where they show:** each page shows its own comments, oldest first, with the box for a new comment underneath. Supplier comments are on the supplier page and contract comments on the contract page.
+- **Changing them:** people can edit their own comments (shown as "edited") and delete them. Admins can delete anyone's comment, for example to remove personal data.
+- **Kept with their record:** comments on archived suppliers are read-only. Deleting a contract deletes its comments too.
+
 ## Everyday commands
 
 ```bash

@@ -10,6 +10,7 @@ import RatingList from '@/components/ratings/RatingList.vue';
 import SupplierRiskPanel from '@/components/risk/SupplierRiskPanel.vue';
 import SpendList from '@/components/spend/SpendList.vue';
 import CertificateList from '@/components/certificates/CertificateList.vue';
+import CommentSection from '@/components/comments/CommentSection.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import Heading from '@/components/Heading.vue';
 import ContractList from '@/components/contracts/ContractList.vue';
@@ -21,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type {
     CertificateType,
+    CommentFeed,
     RatingCriterion,
     SelectOption,
     SupplierDetails,
@@ -28,6 +30,7 @@ import type {
 
 const props = defineProps<{
     supplier: SupplierDetails;
+    comments: CommentFeed;
     certificateTypes: CertificateType[];
     ratingCriteria: RatingCriterion[];
     riskLevels: SelectOption[];
@@ -36,6 +39,7 @@ const props = defineProps<{
         update: boolean;
         archive: boolean;
         restore: boolean;
+        comment: boolean;
         viewContracts: boolean;
         viewSpend: boolean;
     };
@@ -267,6 +271,12 @@ function restore(): void {
             :supplier-id="supplier.id"
             :contacts="supplier.contacts"
             :can-edit="can.update"
+        />
+
+        <CommentSection
+            :supplier-id="supplier.id"
+            :feed="comments"
+            :can-comment="can.comment"
         />
     </div>
 

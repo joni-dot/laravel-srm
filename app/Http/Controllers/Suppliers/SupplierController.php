@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Suppliers;
 
+use App\Comments\CommentFeed;
 use App\Compliance\SupplierRisk;
 use App\Enums\Currency;
 use App\Enums\DeliveryTerm;
@@ -12,6 +13,7 @@ use App\Http\Requests\Suppliers\SupplierRequest;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\CertificateType;
+use App\Models\Comment;
 use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Document;
@@ -98,86 +100,24 @@ class SupplierController extends Controller
         ]);
     }
 
-    public function show(Request $request, Supplier $supplier, SupplierRisk $supplierRisk): Response
+    public function show(Request $request, Supplier $supplier, SupplierRisk $supplierRisk, CommentFeed $commentFeed): Response
     {
         $canViewContracts = $request->user()->can('viewDetails', Contract::class);
         $canViewSpend = $request->user()->can('viewAny', SupplierSpend::class);
 
-        $supplier->loadCount('contracts');
-        $supplier->load([
-            'categories:id,name',
-            'responsibleUser:id,name',
-            'contacts' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('name'),
-            'certificates' => fn ($query) => $query->with(['type:id,name', 'reminders:id,certificate_id,days_before'])->orderByDesc('expires_on'),
-            'documents' => fn ($query) => $query->whereNull('contract_id')->orderBy('file_name'),
-            'riskOverriddenBy:id,name',
-            'ratings' => fn ($query) => $query
-                ->with(['ratedBy:id,name', 'scores.criterion:id,name'])
-                ->latest('rated_on')
-                ->latest('id')
-                ->limit(self::RATINGS_SHOWN),
-        ]);
-
-        $risk = $supplierRisk->assess(collect([$supplier]))[$supplier->id];
-
+        // Closures, so that "show older comments" reloads only the comments.
         return Inertia::render('suppliers/Show', [
-            'supplier' => [
-                ...$supplier->only([
-                    'id', 'name', 'supplier_number', 'status', 'business_id', 'vat_number',
-                    'street_address', 'postal_code', 'city', 'website', 'email', 'phone',
-                    'payment_terms', 'delivery_place', 'notes', 'archived_at',
-                ]),
-                'responsible_user' => $supplier->responsibleUser?->name,
-                'country' => Countries::getName($supplier->country_code),
-                'currency' => $supplier->currency_code?->label(),
-                'delivery_term' => $supplier->delivery_term?->label(),
-                'categories' => $supplier->categories->pluck('name'),
-                'contacts' => $supplier->contacts->map(fn (Contact $contact) => $contact->only([
-                    'id', 'name', 'job_title', 'email', 'phone', 'is_primary',
-                ])),
-                'certificates' => $supplier->certificates->map(fn (Certificate $certificate) => [
-                    ...$certificate->only(['id', 'certificate_type_id', 'reference', 'file_name', 'file_size']),
-                    'issued_on' => $certificate->issued_on?->toDateString(),
-                    'expires_on' => $certificate->expires_on?->toDateString(),
-                    'type' => $certificate->type->name,
-                    'status' => $certificate->status(),
-                    'reminder_days' => $certificate->reminders->pluck('days_before')->sortDesc()->values(),
-                ]),
-                'missing_certificates' => $risk['missing_certificates'],
-                'documents' => $supplier->documents->map(fn (Document $document) => $document->only(['id', 'file_name', 'file_size'])),
-                'contracts_count' => $supplier->contracts_count,
-                'contracts' => $canViewContracts ? $this->contractSummaries($supplier) : [],
-                'latest_rating_score' => $supplier->latest_rating_score,
-                'risk' => [
-                    'level' => $risk['level'],
-                    'calculated_level' => $risk['calculated_level'],
-                    'signals' => $risk['signals'],
-                    'reason' => $supplier->risk_override_reason,
-                    'overridden_by' => $supplier->riskOverriddenBy?->name,
-                    'overridden_at' => $supplier->risk_overridden_at?->toDateString(),
-                    'is_overridden' => $supplier->risk_override !== null,
-                ],
-                'ratings' => $supplier->ratings->map(fn (SupplierRating $rating) => [
-                    ...$rating->only(['id', 'overall_score', 'comment']),
-                    'rated_on' => $rating->rated_on->toDateString(),
-                    'rated_by' => $rating->ratedBy?->name,
-                    'scores' => $rating->scores->map(fn (RatingScore $score) => [
-                        'criterion' => $score->criterion->name,
-                        'score' => $score->score,
-                    ]),
-                ]),
-                'spends' => $canViewSpend
-                    ? $supplier->spends()->orderByDesc('year')->get()->map(fn (SupplierSpend $spend) => $spend->only(['id', 'year', 'amount', 'currency_code']))
-                    : [],
-            ],
-            'ratingCriteria' => RatingCriterion::query()->inUse()->orderBy('name')->get(['id', 'name']),
+            'supplier' => fn () => $this->supplierDetails($supplier, $supplierRisk, $canViewContracts, $canViewSpend),
+            'comments' => fn () => $commentFeed->forSupplier($supplier, $request->user(), CommentFeed::requestedLimit($request)),
+            'ratingCriteria' => fn () => RatingCriterion::query()->inUse()->orderBy('name')->get(['id', 'name']),
             'riskLevels' => RiskLevel::options(),
             'currencies' => Currency::options(),
-            'certificateTypes' => CertificateType::query()->orderBy('name')->get(['id', 'name']),
+            'certificateTypes' => fn () => CertificateType::query()->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'update' => $request->user()->can('update', $supplier),
                 'archive' => $request->user()->can('archive', $supplier),
                 'restore' => $request->user()->can('restore', $supplier),
+                'comment' => $request->user()->can('create', [Comment::class, $supplier]),
                 'viewContracts' => $canViewContracts,
                 'viewSpend' => $canViewSpend,
             ],
@@ -228,6 +168,79 @@ class SupplierController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Supplier updated.')]);
 
         return to_route('suppliers.show', $supplier);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function supplierDetails(Supplier $supplier, SupplierRisk $supplierRisk, bool $canViewContracts, bool $canViewSpend): array
+    {
+        $supplier->loadCount('contracts');
+        $supplier->load([
+            'categories:id,name',
+            'responsibleUser:id,name',
+            'contacts' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('name'),
+            'certificates' => fn ($query) => $query->with(['type:id,name', 'reminders:id,certificate_id,days_before'])->orderByDesc('expires_on'),
+            'documents' => fn ($query) => $query->whereNull('contract_id')->orderBy('file_name'),
+            'riskOverriddenBy:id,name',
+            'ratings' => fn ($query) => $query
+                ->with(['ratedBy:id,name', 'scores.criterion:id,name'])
+                ->latest('rated_on')
+                ->latest('id')
+                ->limit(self::RATINGS_SHOWN),
+        ]);
+
+        $risk = $supplierRisk->assess(collect([$supplier]))[$supplier->id];
+
+        return [
+            ...$supplier->only([
+                'id', 'name', 'supplier_number', 'status', 'business_id', 'vat_number',
+                'street_address', 'postal_code', 'city', 'website', 'email', 'phone',
+                'payment_terms', 'delivery_place', 'notes', 'archived_at',
+            ]),
+            'responsible_user' => $supplier->responsibleUser?->name,
+            'country' => Countries::getName($supplier->country_code),
+            'currency' => $supplier->currency_code?->label(),
+            'delivery_term' => $supplier->delivery_term?->label(),
+            'categories' => $supplier->categories->pluck('name'),
+            'contacts' => $supplier->contacts->map(fn (Contact $contact) => $contact->only([
+                'id', 'name', 'job_title', 'email', 'phone', 'is_primary',
+            ])),
+            'certificates' => $supplier->certificates->map(fn (Certificate $certificate) => [
+                ...$certificate->only(['id', 'certificate_type_id', 'reference', 'file_name', 'file_size']),
+                'issued_on' => $certificate->issued_on?->toDateString(),
+                'expires_on' => $certificate->expires_on?->toDateString(),
+                'type' => $certificate->type->name,
+                'status' => $certificate->status(),
+                'reminder_days' => $certificate->reminders->pluck('days_before')->sortDesc()->values(),
+            ]),
+            'missing_certificates' => $risk['missing_certificates'],
+            'documents' => $supplier->documents->map(fn (Document $document) => $document->only(['id', 'file_name', 'file_size'])),
+            'contracts_count' => $supplier->contracts_count,
+            'contracts' => $canViewContracts ? $this->contractSummaries($supplier) : [],
+            'latest_rating_score' => $supplier->latest_rating_score,
+            'risk' => [
+                'level' => $risk['level'],
+                'calculated_level' => $risk['calculated_level'],
+                'signals' => $risk['signals'],
+                'reason' => $supplier->risk_override_reason,
+                'overridden_by' => $supplier->riskOverriddenBy?->name,
+                'overridden_at' => $supplier->risk_overridden_at?->toDateString(),
+                'is_overridden' => $supplier->risk_override !== null,
+            ],
+            'ratings' => $supplier->ratings->map(fn (SupplierRating $rating) => [
+                ...$rating->only(['id', 'overall_score', 'comment']),
+                'rated_on' => $rating->rated_on->toDateString(),
+                'rated_by' => $rating->ratedBy?->name,
+                'scores' => $rating->scores->map(fn (RatingScore $score) => [
+                    'criterion' => $score->criterion->name,
+                    'score' => $score->score,
+                ]),
+            ]),
+            'spends' => $canViewSpend
+                ? $supplier->spends()->orderByDesc('year')->get()->map(fn (SupplierSpend $spend) => $spend->only(['id', 'year', 'amount', 'currency_code']))
+                : [],
+        ];
     }
 
     /**

@@ -127,6 +127,14 @@ class Supplier extends Model
     }
 
     /**
+     * @return HasMany<Comment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
      * @return HasMany<SupplierRating, $this>
      */
     public function ratings(): HasMany
