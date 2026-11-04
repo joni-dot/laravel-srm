@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import ContractController from '@/actions/App/Http/Controllers/Suppliers/ContractController';
 import SupplierController from '@/actions/App/Http/Controllers/Suppliers/SupplierController';
 import UploadContractDocumentController from '@/actions/App/Http/Controllers/Suppliers/UploadContractDocumentController';
+import CommentSection from '@/components/comments/CommentSection.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import ContractHealthBadge from '@/components/contracts/ContractHealthBadge.vue';
 import DocumentList from '@/components/documents/DocumentList.vue';
@@ -12,12 +13,13 @@ import Heading from '@/components/Heading.vue';
 import DetailItem from '@/components/suppliers/DetailItem.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney } from '@/lib/format';
-import type { ContractDetails } from '@/types';
+import type { CommentFeed, ContractDetails } from '@/types';
 
 const props = defineProps<{
     supplier: { id: number; name: string };
     contract: ContractDetails;
-    can: { update: boolean };
+    comments: CommentFeed;
+    can: { update: boolean; comment: boolean };
 }>();
 
 const route = { supplier: props.supplier.id, contract: props.contract.id };
@@ -139,13 +141,20 @@ const reminders = computed(() => {
             :upload-action="UploadContractDocumentController.form(route)"
             :can-edit="can.update"
         />
+
+        <CommentSection
+            :supplier-id="supplier.id"
+            :contract-id="contract.id"
+            :feed="comments"
+            :can-comment="can.comment"
+        />
     </div>
 
     <ConfirmActionDialog
         v-model:open="isConfirmingDelete"
         :action="ContractController.destroy.form(route)"
         :title="`Delete ${contract.title}?`"
-        description="The contract, its documents and its reminders are removed permanently. To keep the record, set its status to Terminated instead."
+        description="The contract, its documents, comments and reminders are removed permanently. To keep the record, set its status to Terminated instead."
         confirm-label="Delete"
     />
 </template>

@@ -16,4 +16,8 @@ export const seeded = {
     contractValue: '123456',
     spendAmount: '987654',
     requiredCertificate: 'ISO 9001',
+    supplierComment: 'Browser test supplier comment',
+    contractComment: 'Secret negotiation note',
+    busySupplierUrl: '/suppliers/2',
+    busySupplierCommentCount: 25,
 } as const;

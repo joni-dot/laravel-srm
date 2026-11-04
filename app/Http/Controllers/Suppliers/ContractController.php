@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Suppliers;
 
 use App\Actions\Contracts\DeleteContract;
 use App\Actions\Contracts\SaveContract;
+use App\Comments\CommentFeed;
 use App\Enums\ContractStatus;
 use App\Enums\ContractValuePeriod;
 use App\Enums\Currency;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Suppliers\ContractRequest;
+use App\Models\Comment;
 use App\Models\Contract;
 use App\Models\ContractType;
 use App\Models\Document;
@@ -21,7 +23,7 @@ use Inertia\Response;
 
 class ContractController extends Controller
 {
-    public function show(Request $request, Supplier $supplier, Contract $contract): Response
+    public function show(Request $request, Supplier $supplier, Contract $contract, CommentFeed $commentFeed): Response
     {
         $contract->load([
             'type:id,name',
@@ -47,8 +49,10 @@ class ContractController extends Controller
                 'reminder_days' => $contract->reminders->pluck('days_before')->sortDesc()->values(),
                 'documents' => $contract->documents->map(fn (Document $document) => $document->only(['id', 'file_name', 'file_size'])),
             ],
+            'comments' => fn () => $commentFeed->forContract($contract, $supplier, $request->user(), CommentFeed::requestedLimit($request)),
             'can' => [
                 'update' => $request->user()->can('update', $supplier),
+                'comment' => $request->user()->can('create', [Comment::class, $supplier]),
             ],
         ]);
     }

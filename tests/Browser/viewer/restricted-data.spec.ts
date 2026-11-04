@@ -14,6 +14,7 @@ for (const url of [seeded.supplierUrl, '/dashboard']) {
         expect(body).not.toContain(seeded.contractTitle);
         expect(body).not.toContain(seeded.contractValue);
         expect(body).not.toContain(seeded.spendAmount);
+        expect(body).not.toContain(seeded.contractComment);
     });
 }
 
@@ -32,7 +33,17 @@ test('the supplier page shows a contract count and no editing', async ({
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Spend' })).toHaveCount(0);
 
-    for (const name of ['Edit', 'Archive', 'Add rating', 'Add certificate']) {
+    await expect(page.getByText(seeded.supplierComment)).toBeVisible();
+    await expect(page.getByLabel('New comment')).toHaveCount(0);
+
+    for (const name of [
+        'Edit',
+        'Archive',
+        'Add rating',
+        'Add certificate',
+        'Post comment',
+        'Delete comment',
+    ]) {
         await expect(page.getByRole('button', { name })).toHaveCount(0);
     }
     await expect(page.getByRole('link', { name: 'Edit' })).toHaveCount(0);

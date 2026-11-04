@@ -102,6 +102,14 @@ class Contract extends Model
         return $this->hasMany(Document::class);
     }
 
+    /**
+     * @return HasMany<Comment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function health(): ContractHealth
     {
         return match (true) {

@@ -14,6 +14,11 @@ test('a buyer gets the contract and spend data a viewer does not', async ({
     await expect(
         page.getByRole('heading', { name: seeded.contractTitle }),
     ).toBeVisible();
+
+    const contractBody = await (
+        await page.request.get(seeded.contractUrl)
+    ).text();
+    expect(contractBody).toContain(seeded.contractComment);
 });
 
 test('the dashboard shows a buyer the biggest suppliers by spend', async ({

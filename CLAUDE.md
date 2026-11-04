@@ -42,7 +42,7 @@ If a result makes no sense, Docker Desktop may have missed a quick file edit. Co
 
 ## Things that are easy to break
 
-- **Viewers must not get restricted data.** Only buyers and admins see contract details (`ContractPolicy::viewDetails`) and spend (`SupplierSpendPolicy::viewAny`). Enforce this on the server by leaving the data out of the response, not by hiding it in Vue.
+- **Viewers must not get restricted data.** Only buyers and admins see contract details (`ContractPolicy::viewDetails`), including comments about contracts, and spend (`SupplierSpendPolicy::viewAny`). Enforce this on the server by leaving the data out of the response, not by hiding it in Vue.
 - **Some rules exist twice, in PHP for a page and in SQL for a list filter, and must change together.** Tests fail if they disagree:
     - Risk: `app/Compliance/SupplierRisk.php` and `Supplier::withRiskLevel()`
     - Required certificates: `app/Compliance/RequiredCertificates.php` and `Supplier::missingRequiredCertificates()`
