@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BadgeCheck,
     Building2,
+    KeyRound,
     FileText,
     LayoutGrid,
     Settings,
@@ -11,6 +12,7 @@ import {
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
+import ApiClientController from '@/actions/App/Http/Controllers/Admin/ApiClientController';
 import CategoryController from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import CertificateTypeController from '@/actions/App/Http/Controllers/Admin/CertificateTypeController';
 import ContractTypeController from '@/actions/App/Http/Controllers/Admin/ContractTypeController';
@@ -87,6 +89,14 @@ const adminNavItems = computed<NavItem[]>(() => {
         {
             isVisible: can.manageUsers,
             item: { title: 'Users', href: UserController.index(), icon: Users },
+        },
+        {
+            isVisible: can.manageApiClients,
+            item: {
+                title: 'API clients',
+                href: ApiClientController.index(),
+                icon: KeyRound,
+            },
         },
         {
             isVisible: can.manageSettings,

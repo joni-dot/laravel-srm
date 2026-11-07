@@ -34,7 +34,12 @@ test('the dashboard shows a buyer the biggest suppliers by spend', async ({
     ).toBeVisible();
 });
 
-for (const url of ['/admin/users', '/admin/categories', '/admin/settings']) {
+for (const url of [
+    '/admin/users',
+    '/admin/categories',
+    '/admin/settings',
+    '/admin/api-clients',
+]) {
     test(`${url} is forbidden for a buyer`, async ({ page }) => {
         const response = await page.request.get(url);
 

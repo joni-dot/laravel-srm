@@ -1,22 +1,27 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiClientController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CertificateTypeController;
 use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\Admin\DeactivateUserController;
 use App\Http\Controllers\Admin\RatingCriterionController;
 use App\Http\Controllers\Admin\ReactivateUserController;
+use App\Http\Controllers\Admin\RegenerateApiClientSecretController;
 use App\Http\Controllers\Admin\ResendInvitationController;
 use App\Http\Controllers\Admin\RestoreRatingCriterionController;
+use App\Http\Controllers\Admin\RevokeApiClientController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UpdateRatingWeightsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Models\ApiClient;
 use App\Models\Category;
 use App\Models\CertificateType;
 use App\Models\ContractType;
 use App\Models\RatingCriterion;
 use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
@@ -124,4 +129,33 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('rating-criteria/{ratingCriterion}/restore', RestoreRatingCriterionController::class)
         ->can('manage', RatingCriterion::class)
         ->name('rating-criteria.restore');
+
+    // Clients give other systems access to supplier data, so the admin must have entered their password recently.
+    Route::get('api-clients', [ApiClientController::class, 'index'])
+        ->can('manage', ApiClient::class)
+        ->middleware(RequirePassword::class)
+        ->name('api-clients.index');
+
+    Route::post('api-clients', [ApiClientController::class, 'store'])
+        ->can('manage', ApiClient::class)
+        ->middleware(RequirePassword::class)
+        ->name('api-clients.store');
+
+    Route::put('api-clients/{apiClient}', [ApiClientController::class, 'update'])
+        ->whereUuid('apiClient')
+        ->can('update', 'apiClient')
+        ->middleware(RequirePassword::class)
+        ->name('api-clients.update');
+
+    Route::post('api-clients/{apiClient}/secret', RegenerateApiClientSecretController::class)
+        ->whereUuid('apiClient')
+        ->can('update', 'apiClient')
+        ->middleware(RequirePassword::class)
+        ->name('api-clients.secret.regenerate');
+
+    Route::post('api-clients/{apiClient}/revoke', RevokeApiClientController::class)
+        ->whereUuid('apiClient')
+        ->can('update', 'apiClient')
+        ->middleware(RequirePassword::class)
+        ->name('api-clients.revoke');
 });

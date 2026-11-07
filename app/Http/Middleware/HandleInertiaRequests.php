@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ApiClient;
 use App\Models\Category;
 use App\Models\CertificateType;
 use App\Models\ContractType;
@@ -53,6 +54,7 @@ class HandleInertiaRequests extends Middleware
                     'manageContractTypes' => (bool) $request->user()?->can('manage', ContractType::class),
                     'manageRatingCriteria' => (bool) $request->user()?->can('manage', RatingCriterion::class),
                     'manageSettings' => (bool) $request->user()?->can('manage', Setting::class),
+                    'manageApiClients' => (bool) $request->user()?->can('manage', ApiClient::class),
                 ],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
