@@ -35,8 +35,7 @@ class SaveRating
                 $rating->scores()->create(['rating_criterion_id' => $criterionId, 'score' => $score]);
             }
 
-            $this->recalculateOverallScores->forRating($rating);
-            $supplier->refreshLatestRatingScore();
+            $this->recalculateOverallScores->handle($rating);
 
             return $rating->refresh();
         });

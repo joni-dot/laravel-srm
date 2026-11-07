@@ -52,6 +52,18 @@ class RatingTest extends TestCase
         $this->assertSame('5.00', $this->supplier->refresh()->latest_rating_score);
     }
 
+    public function test_a_rating_leaves_other_suppliers_latest_score_alone()
+    {
+        $other = Supplier::factory()->create();
+        SupplierRating::factory()->create(['supplier_id' => $other->id, 'overall_score' => '4.00']);
+        $other->forceFill(['latest_rating_score' => '1.00'])->save();
+
+        $this->rate(today()->toDateString(), [5, 5, 5, 5]);
+
+        $this->assertSame('5.00', $this->supplier->refresh()->latest_rating_score);
+        $this->assertSame('1.00', $other->refresh()->latest_rating_score);
+    }
+
     public function test_deleting_a_rating_updates_the_latest_score()
     {
         $this->rate(today()->subMonth()->toDateString(), [2, 2, 2, 2]);

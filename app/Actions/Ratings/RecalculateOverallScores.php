@@ -12,29 +12,17 @@ use Illuminate\Support\Facades\DB;
  */
 class RecalculateOverallScores
 {
-    public function forRating(SupplierRating $rating): void
+    /**
+     * Recalculates the given rating, or every rating when none is given,
+     * and keeps the affected suppliers' latest rating score in step.
+     */
+    public function handle(?SupplierRating $rating = null): void
     {
-        $this->recalculate($rating->id);
+        $this->updateOverallScores($rating?->id);
+        $this->updateLatestSupplierScores($rating?->supplier_id);
     }
 
-    public function forAllRatings(): void
-    {
-        $this->recalculate();
-
-        DB::update('
-            UPDATE suppliers
-            SET latest_rating_score = latest.overall_score
-            FROM (
-                SELECT DISTINCT ON (supplier_id) supplier_id, overall_score
-                FROM supplier_ratings
-                ORDER BY supplier_id, rated_on DESC, id DESC
-            ) AS latest
-            WHERE suppliers.id = latest.supplier_id
-              AND suppliers.latest_rating_score IS DISTINCT FROM latest.overall_score
-        ');
-    }
-
-    private function recalculate(?int $ratingId = null): void
+    private function updateOverallScores(?int $ratingId): void
     {
         $calculated = DB::table('rating_scores')
             ->join('rating_criteria', 'rating_criteria.id', '=', 'rating_scores.rating_criterion_id')
@@ -50,5 +38,24 @@ class RecalculateOverallScores
             WHERE supplier_ratings.id = calculated.supplier_rating_id
               AND supplier_ratings.overall_score IS DISTINCT FROM calculated.score
         ", $calculated->getBindings());
+    }
+
+    private function updateLatestSupplierScores(?int $supplierId): void
+    {
+        $latest = DB::table('supplier_ratings')
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->distinct('supplier_id')
+            ->select('supplier_id', 'overall_score')
+            ->orderBy('supplier_id')
+            ->orderByDesc('rated_on')
+            ->orderByDesc('id');
+
+        DB::update("
+            UPDATE suppliers
+            SET latest_rating_score = latest.overall_score
+            FROM ({$latest->toSql()}) AS latest
+            WHERE suppliers.id = latest.supplier_id
+              AND suppliers.latest_rating_score IS DISTINCT FROM latest.overall_score
+        ", $latest->getBindings());
     }
 }
