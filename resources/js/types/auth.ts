@@ -17,6 +17,7 @@ export type Auth = {
         manageContractTypes: boolean;
         manageRatingCriteria: boolean;
         manageSettings: boolean;
+        manageApiClients: boolean;
     };
 };
 

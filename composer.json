@@ -14,6 +14,7 @@
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
+        "laravel/passport": "^13.10",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "symfony/intl": "^8.1"
@@ -46,6 +47,7 @@
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
+            "@php -r \"file_exists('storage/oauth-private.key') || passthru(PHP_BINARY.' artisan passport:keys --ansi');\"",
             "@php artisan migrate --force",
             "pnpm install --frozen-lockfile",
             "pnpm run build"

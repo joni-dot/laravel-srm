@@ -57,6 +57,7 @@ for (const url of [
     '/suppliers/create',
     '/admin/users',
     '/admin/settings',
+    '/admin/api-clients',
 ]) {
     test(`${url} is forbidden`, async ({ page }) => {
         const response = await page.request.get(url);

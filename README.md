@@ -23,6 +23,7 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/app -w /app composer:latest co
 ./vendor/bin/sail build              # build the app image (first time only)
 ./vendor/bin/sail up -d              # start the app, database, Redis, Mailpit and the queue worker
 ./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan passport:keys   # keys that sign API tokens; kept out of git
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail pnpm install
 ./vendor/bin/sail artisan app:create-user   # pick the Admin role; there is no public sign-up
@@ -52,11 +53,11 @@ After changing PHP code that runs in the background, restart the workers with `.
 
 ## Roles
 
-| Role   | Can do                                                             |
-| ------ | ------------------------------------------------------------------ |
-| Admin  | Everything, plus users, categories, certificate types and settings |
-| Buyer  | Add, edit and archive suppliers and their contacts                 |
-| Viewer | Look only                                                          |
+| Role   | Can do                                                                          |
+| ------ | ------------------------------------------------------------------------------- |
+| Admin  | Everything, plus users, categories, certificate types, API clients and settings |
+| Buyer  | Add, edit and archive suppliers and their contacts                              |
+| Viewer | Look only                                                                       |
 
 Admins can't change their own role or deactivate themselves, so there is always at least one admin. Users are deactivated, never deleted, so their history stays intact.
 
@@ -101,6 +102,25 @@ To run these jobs right away while testing:
 - **Where they show:** each page shows its own comments, oldest first, with the box for a new comment underneath. Supplier comments are on the supplier page and contract comments on the contract page.
 - **Changing them:** people can edit their own comments (shown as "edited") and delete them. Admins can delete anyone's comment, for example to remove personal data.
 - **Kept with their record:** comments on archived suppliers are read-only. Deleting a contract deletes its comments too.
+
+## API for other systems
+
+Other systems, such as an ERP or a reporting tool, can read SRM data through an API. There are no public endpoints: every request needs a valid access token.
+
+- **Who gets access:** an admin adds the system on the **API clients** page, ticks what it may read and names a responsible person. The page asks for the admin's password again first.
+- **Signing in:** the system uses OAuth 2.0 client credentials. It sends its client ID and secret to `POST /api/oauth/token` and gets an access token that lasts 15 minutes. There are no refresh tokens; it simply asks again. No other OAuth flows are offered.
+- **The secret is shown once.** SRM keeps only a hash. If the secret is lost or may have leaked, create a new one: the old secret and its tokens stop working at once. Revoking a client is permanent; it stays in the list for the record.
+- **What it can read** (scope `suppliers:read`): `GET /api/v1/suppliers` and `GET /api/v1/suppliers/{id}` return company details, categories, latest rating and risk level. Notes, contacts, the responsible buyer, contracts and spend are never included.
+- **Paging and filters:** results come 100 at a time (`per_page`, up to 200). Pass the returned `next_cursor` as `cursor` for the next page. Filters: `status`, `updated_since` (changes to the supplier's own details) and `include_archived=true`.
+- **Servers only:** web pages on other sites cannot call the API from a browser (CORS is off), and a login session never counts as API access.
+- **Limits and records:** each client may make 120 requests a minute. An address that fails to get a token 10 times is blocked for 15 minutes. Every call is logged with the client, address and result in `storage/logs/api-*.log`, kept for 90 days.
+
+```bash
+curl -u "$CLIENT_ID:$CLIENT_SECRET" -d grant_type=client_credentials https://srm.example.com/api/oauth/token
+curl -H "Authorization: Bearer $ACCESS_TOKEN" "https://srm.example.com/api/v1/suppliers?status=active"
+```
+
+On a server, create the signing keys once with `artisan passport:keys`, or put them in `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY`. Keep the same keys across deployments; new keys log every system out (they simply fetch a new token).
 
 ## Everyday commands
 
