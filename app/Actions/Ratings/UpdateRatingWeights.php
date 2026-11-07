@@ -45,7 +45,7 @@ class UpdateRatingWeights
 
             $changed->each(fn (RatingCriterion $criterion) => $criterion->save());
 
-            $this->recalculateOverallScores->forAllRatings();
+            $this->recalculateOverallScores->handle();
         });
     }
 }
