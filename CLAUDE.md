@@ -50,6 +50,8 @@ If a result makes no sense, Docker Desktop may have missed a quick file edit. Co
     - Contract health: `Contract::health()` and `Contract::needingActionSoon()`
 - **Dashboard tile counts must equal the supplier list each tile links to.** Archived suppliers never count.
 - **Overall rating scores are calculated in one place only:** `app/Actions/Ratings/RecalculateOverallScores.php`.
+- **Links in emails come from `APP_URL`,** never from the request's host name (`ResetPasswordLink`, trusted hosts in `bootstrap/app.php`). A new email with a link must do the same.
+- **Account forms must not reveal who has an account.** Forgot password and reset password give the same answer for every address (`app/Http/Responses`); keep any new sign-in or reset message the same for known and unknown addresses.
 - **Records are kept.** Suppliers are archived and users are deactivated, never deleted. Contacts are truly deleted for privacy.
 - **Seeders must refuse to run in production.** `SeedersRefuseProductionTest` covers this, so add any new seeder to it.
 - **Generated code:** `resources/js/actions`, `resources/js/routes` and `resources/js/wayfinder` are generated and ignored by git. Don't edit them.
