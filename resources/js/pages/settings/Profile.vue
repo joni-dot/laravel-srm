@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -22,6 +22,12 @@ defineOptions({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+
+const email = ref(user.value.email);
+// Matches ProfileUpdateRequest::changesEmail(): the server asks for the password only then.
+const changesEmail = computed(
+    () => email.value.trim().toLowerCase() !== user.value.email.toLowerCase(),
+);
 </script>
 
 <template>
@@ -62,12 +68,32 @@ const user = computed(() => page.props.auth.user);
                     type="email"
                     class="mt-1 block w-full"
                     name="email"
-                    :default-value="user.email"
+                    v-model="email"
                     required
                     autocomplete="username"
                     placeholder="Email address"
                 />
                 <InputError class="mt-2" :message="errors.email" />
+            </div>
+
+            <div v-if="changesEmail" class="grid gap-2">
+                <Label for="current_password">Current password</Label>
+                <Input
+                    id="current_password"
+                    type="password"
+                    class="mt-1 block w-full"
+                    name="current_password"
+                    required
+                    autocomplete="current-password"
+                    aria-describedby="current-password-hint"
+                />
+                <p
+                    id="current-password-hint"
+                    class="text-sm text-muted-foreground"
+                >
+                    Changing your email address needs your password.
+                </p>
+                <InputError class="mt-2" :message="errors.current_password" />
             </div>
 
             <div class="flex items-center gap-4">
